@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#ipcrm `ipcs -m | egrep '^0x' | awk '{print "-m " $2}'`
+#ipcrm `ipcs -s | egrep '^0x' | awk '{print "-s " $2}'`
+
+#ipcs -s | grep $USERNAME | grep 666 | awk ' { print $2 } ' | xargs ipcrm sem
+#ipcs -m | grep $USERNAME | grep 666 | awk ' { print $2 } ' | xargs ipcrm shm
+
+rm /tmp/compass_*
+rm /dev/shm/sem.compass_*
