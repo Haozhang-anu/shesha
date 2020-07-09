@@ -51,6 +51,7 @@ import shesha.constants as scons
 import shesha.util.hdf5_util as h5u
 
 import time
+import numpy as np
 
 from typing import Iterable, Any, Dict
 from shesha.sutra_wrap import Sensors, Dms, Rtc_FFF as Rtc, Atmos, Telescope, Target, carmaWrap_context
@@ -294,6 +295,24 @@ class Simulator:
         else:
             self.rtc = None
 
+
+    def next_slopes(self,wfs_trace=None,controllers=None):
+
+        if wfs_trace is None and self.wfs is not None:
+            wfs_trace = range(len(self.wfs.d_wfs))
+
+        if controllers is None and self.rtc.d_control is not None:
+            controllers = range(len(self.rtc.d_control))
+        
+        self.moveAtmos()
+        for w in wfs_trace:
+            self.raytraceWfs(w, ["atmos", "tel", "ncpa"])
+            self.compWfsImage(w)
+        for ncontrol in controllers:
+            self.doCentroids(ncontrol)
+        return  np.array(self.rtc.d_control[0].d_centroids)
+
+
     def next(self, *, move_atmos: bool = True, see_atmos: bool = True, nControl: int = 0,
              tar_trace: Iterable[int] = None, wfs_trace: Iterable[int] = None,
              do_control: bool = True, apply_control: bool = True,
@@ -380,7 +399,7 @@ class Simulator:
                                                           etr, framerate))
 
     def loop(self, n: int = 1, monitoring_freq: int = 100, compute_tar_psf: bool = True,
-             **kwargs):
+             abortThresh: float = 0. , **kwargs):
         """
         Perform the AO loop for n iterations
 
@@ -408,6 +427,10 @@ class Simulator:
                         self.compStrehl()
                     self.print_strehl(monitoring_freq, time.time() - t1, i, i)
                     t1 = time.time()
+                    SRmax=max([self.getStrehl(tar)[0] for tar in range(self.tar.ntargets) ])
+                    if(SRmax<abortThresh):
+                        print("SR SE too low: stopping the loop")
+                        break
                 i += 1
 
         for i in range(n):
@@ -418,9 +441,147 @@ class Simulator:
                     self.compStrehl()
                 self.print_strehl(monitoring_freq, time.time() - t1, i, n)
                 t1 = time.time()
+                SRmax=max([self.getStrehl(tar)[0] for tar in range(self.tar.ntargets) ])
+                if(SRmax<abortThresh):
+                    print("SR SE too low: stopping the loop")
+                    break
         t1 = time.time()
         print(" loop execution time:", t1 - t0, "  (", n, "iterations), ", (t1 - t0) / n,
               "(mean)  ", n / (t1 - t0), "Hz")
+
+
+    def Cmm(self, n: int = 1, monitoring_freq: int = 100,wfs_trace=None,controllers=None):
+
+        if controllers is None and self.rtc.d_control is not None:
+            controllers = range(len(self.rtc.d_control))
+
+
+
+        print("----------------------------------------------------")
+        print("iter# | S.E. SR | L.E. SR | ETR (s) | Framerate (Hz)")
+        print("----------------------------------------------------")
+        # self.next(**kwargs)
+        t0 = time.time()
+        t1 = time.time()
+        nSlopes=np.array(self.rtc.d_control[0].d_centroids).size
+
+        slopes=np.zeros((nSlopes,monitoring_freq))
+        Cmm=np.zeros((nSlopes,nSlopes))
+        for i in range(n):
+            m=i % monitoring_freq
+            slopes[:,m]=self.next_slopes(wfs_trace,controllers)
+            if(m == monitoring_freq-1 or i==n-1):
+                Cmm+=slopes[:,:m+1].dot(slopes[:,:m+1].T)/n
+                self.print_strehl(monitoring_freq, time.time() - t1, i, n)
+                t1 = time.time()
+
+        return Cmm
+
+    def Cmmk(self, n: int = 1, monitoring_freq: int = 100, delay: int = 0, wfs_trace=None,controllers=None):
+
+        if controllers is None and self.rtc.d_control is not None:
+            controllers = range(len(self.rtc.d_control))
+
+        if delay<0:
+            raise ValueError("Delay parameter (currently) must be positive")   
+
+        print("----------------------------------------------------")
+        print("iter# | S.E. SR | L.E. SR | ETR (s) | Framerate (Hz)")
+        print("----------------------------------------------------")
+        # self.next(**kwargs)
+        t0 = time.time()
+        t1 = time.time()
+        nSlopes=np.array(self.rtc.d_control[0].d_centroids).size
+
+        slopes=np.zeros((nSlopes,monitoring_freq))
+        cmmk=np.zeros((nSlopes,nSlopes))
+        lazy_counter = 0
+        for i in range(n):
+            m=i % monitoring_freq
+            slopes[:,m]=self.next_slopes(wfs_trace,controllers)
+            lazy_counter += 1
+            if(m == monitoring_freq-1 or i==n-1):
+                cmmk += slopes[:,:m+1-delay].dot(slopes[:,delay:m+1].T)
+                self.print_strehl(monitoring_freq, time.time() - t1, i, n)
+                t1 = time.time()
+                lazy_counter -= delay
+        cmmk /= lazy_counter
+        return cmmk
+
+    def loopPOLC(self, n: int = 1, monitoring_freq: int = 100, compute_tar_psf: bool = True,
+             abortThresh: float = 0. , **kwargs):
+        """
+        Perform the AO loop for n iterations, and returns the POL Slope buffer
+
+        :parameters:
+            n: (int): (optional) Number of iteration that will be done
+            monitoring_freq: (int): (optional) Monitoring frequency [frames]
+		:returns:
+			slopes: (2d np.array): each column is a sample of pseudo-open
+					loop slopes. One column per it.
+		###### BIG TODO!!! ######
+		Verify that the slopes are aligned with the commands. I think they will
+		not be. If they are not, then use a rolling buffer of the commands, and
+		apply the correct one inside the "pols = ..." line
+        """
+        if not compute_tar_psf:
+            print("WARNING: Target PSF will be computed (& accumulated) only during monitoring"
+                  )
+
+        print("----------------------------------------------------")
+        print("iter# | S.E. SR | L.E. SR | ETR (s) | Framerate (Hz)")
+        print("----------------------------------------------------")
+        # self.next(**kwargs)
+        t0 = time.time()
+        t1 = time.time()
+        dm_hist = np.zeros([self.rtc.d_control[0].nactu,n])
+        cls_hist = np.zeros([self.rtc.d_control[0].nslope,n])
+        if n == -1:
+            i = 0
+            while (True):
+                self.next(compute_tar_psf=compute_tar_psf, **kwargs)
+                if ((i + 1) % monitoring_freq == 0):
+                    if not compute_tar_psf:
+                        self.compTarImage()
+                        self.compStrehl()
+                    self.print_strehl(monitoring_freq, time.time() - t1, i, i)
+                    t1 = time.time()
+                    SRmax=max([self.getStrehl(tar)[0] for tar in range(self.tar.ntargets) ])
+                    if(SRmax<abortThresh):
+                        print("SR SE too low: stopping the loop")
+                        break
+                i += 1
+        #imat = np.array(self.rtc.d_control[0].d_imat)
+        #np.save("imat_"+self.config.simul_name+".npy",imat)
+        #print("imat saved!")
+        for i in range(n):
+            self.next(compute_tar_psf=compute_tar_psf, **kwargs)
+            dmcommand = np.array(self.rtc.d_control[0].d_comClipped)
+            centroids = np.array(self.rtc.d_control[0].d_centroids)
+            '''
+            pols = np.array(self.rtc.d_control[0].d_imat) @ \
+                    np.array(self.rtc.d_control[0].d_comClipped) + \
+                    np.array(self.rtc.d_control[0].d_centroids)
+            slopes[:,i] = pols
+            '''
+            dm_hist[:,i] = dmcommand
+            cls_hist[:,i] = centroids
+
+            if ((i + 1) % monitoring_freq == 0):
+                if not compute_tar_psf:
+                    self.compTarImage()
+                    self.compStrehl()
+                self.print_strehl(monitoring_freq, time.time() - t1, i, n)
+                t1 = time.time()
+                SRmax=max([self.getStrehl(tar)[0] for tar in range(self.tar.ntargets) ])
+                if(SRmax<abortThresh):
+                    print("SR SE too low: stopping the loop")
+                    break
+        t1 = time.time()
+        print(" loop execution time:", t1 - t0, "  (", n, "iterations), ", (t1 - t0) / n,
+              "(mean)  ", n / (t1 - t0), "Hz")
+        return dm_hist,cls_hist
+
 
 
 #  ██╗    ██╗██████╗  █████╗ ██████╗
@@ -626,3 +787,157 @@ class Simulator:
         if (src.phase_var_count > 0):
             avgVar = src.phase_var_avg / src.phase_var_count
         return [src.strehl_se, src.strehl_le, src.phase_var, avgVar]
+    def loopLQG(self, n: int = 1, monitoring_freq: int = 100, 
+                compute_tar_psf: bool = True, abortThresh: float = 0. ,
+                A = None,  L = None, K = None , G = None, **kwargs):
+        """
+        Perform the AO loop using an LQG structure for n iterations
+
+        :parameters:
+            n: (int): (optional) Number of iteration that will be done
+            monitoring_freq: (int): (optional) Monitoring frequency [frames]
+            A: Closed-loop A matrix
+            L: Closed-loop L matrix
+            K: Closed-loop K matrix
+            G: Closed-loop G matrix
+        """
+        self.x   = None
+        self.s   = None
+        self.u   = None
+        self.um1 = None
+        self.srbuffer = []
+
+        if A is None or L is None or \
+           K is None or G is None:
+            raise TypeError("A, L, G, and K matrices must be passed into the loop function")
+        
+        self.A = A
+        self.L = L
+        self.K = K
+        self.G = G
+
+        if not compute_tar_psf:
+            print("WARNING: Target PSF will be computed (& accumulated) only during monitoring"
+                  )
+
+        print("----------------------------------------------------")
+        print("iter# | S.E. SR | L.E. SR | ETR (s) | Framerate (Hz)")
+        print("----------------------------------------------------")
+        # self.next(**kwargs)
+        t0 = time.time()
+        t1 = time.time()
+        for i in range(n):
+            self.nextLQG(compute_tar_psf=compute_tar_psf, **kwargs)
+            if ((i + 1) % monitoring_freq == 0):
+                if not compute_tar_psf:
+                    self.compTarImage()
+                    self.compStrehl()
+                self.print_strehl(monitoring_freq, time.time() - t1, i, n)
+                t1 = time.time()
+                SRmax=max([self.getStrehl(tar)[0] for tar in range(self.tar.ntargets) ])
+                if(SRmax<abortThresh):
+                    print("SR SE too low: stopping the loop")
+                    break
+        t1 = time.time()
+        print(" loop execution time:", t1 - t0, "  (", n, "iterations), ", (t1 - t0) / n,
+              "(mean)  ", n / (t1 - t0), "Hz")
+        return np.array(self.srbuffer)
+
+
+    def nextLQG(self, *, move_atmos: bool = True, see_atmos: bool = True, nControl: int = 0,
+             tar_trace: Iterable[int] = None, wfs_trace: Iterable[int] = None,
+             do_control: bool = True, apply_control: bool = True,
+             compute_tar_psf: bool = True) -> None:
+        '''
+        Iterates the AO loop, with optional parameters
+
+        :parameters:
+             move_atmos: (bool): move the atmosphere for this iteration, default: True
+
+             nControl: (int): Controller number to use, default 0 (single control configurations)
+
+             tar_trace: (None or list[int]): list of targets to trace. None equivalent to all.
+
+             wfs_trace: (None or list[int]): list of WFS to trace. None equivalent to all.
+
+             apply_control: (bool): (optional) if True (default), apply control on DMs
+        '''
+        if self.s is None:
+            self.old_tmp=None
+            self.s   = np.zeros([self.L.shape[1]],dtype=np.float32)
+            self.sp1 = np.zeros([self.L.shape[1]],dtype=np.float32)
+        
+        if do_control and self.rtc is not None:
+            for ncontrol in range(len(self.rtc.d_control)):
+                if self.rtc.d_control[ncontrol].type != scons.ControllerType.GEO:
+                    self.doLQGControl(ncontrol)
+                    self.doClipping(ncontrol)
+                    if apply_control:
+                        self.applyControl(ncontrol,compVoltage=False)
+        
+        self.s = self.sp1.copy()
+        self.sp1 *= 0.0
+
+        if move_atmos and self.atm is not None:
+            self.moveAtmos()
+
+        if tar_trace is None and self.tar is not None:
+            tar_trace = range(len(self.tar.d_targets))
+        if wfs_trace is None and self.wfs is not None:
+            wfs_trace = range(len(self.wfs.d_wfs))
+
+        if tar_trace is not None:
+            for t in tar_trace:
+                if see_atmos:
+                    self.raytraceTar(t, "all")
+                else:
+                    self.raytraceTar(t, ["tel", "dm", "ncpa"])
+        if wfs_trace is not None:
+            for w in wfs_trace:
+                if see_atmos:
+                    self.raytraceWfs(w, ["atmos", "tel", "ncpa"])
+                else:
+                    self.raytraceWfs(w, ["tel", "ncpa"])
+
+                if not self.config.p_wfss[w].openloop and self.dms is not None:
+                    self.raytraceWfs(w, "dm", rst=False)
+                self.compWfsImage(w)
+
+        if self.rtc.d_control[
+                ncontrol].centro_idx is None:  # RTC standalone case
+            self.doCalibrate_img(ncontrol)
+        self.doCentroids(ncontrol)
+
+        self.sp1 = np.array(self.rtc.d_control[nControl].d_centroids)
+        if compute_tar_psf:
+            for nTar in tar_trace:
+                self.compTarImage(nTar)
+                self.compStrehl(nTar)
+                self.srbuffer.append(self.getStrehl(0))
+        
+        self.iter += 1
+
+    def doLQGControl(self, nControl: int, n: int = 0,
+            wfs_direction: bool = False, update_state: bool = False,
+            command_index: int = 0):
+        '''
+        Computes the command from the Wfs slopes
+
+        Parameters
+        ------------
+        nControl: (int): controller index
+        n: (int) : target or wfs index (only used with GEO controller)
+        '''
+        if self.x is None:
+            self.x = np.zeros([self.A.shape[0]],dtype=np.float32)
+
+        if self.u is None:
+            self.u = np.zeros([self.K.shape[0]],dtype=np.float32)
+            self.um1 = np.zeros([self.K.shape[0]],dtype=np.float32)
+
+        self.x = self.A @ self.x + self.L @ self.s - self.G @ self.um1
+        self.um2 = self.um1
+        self.um1 = self.u
+        self.u = self.K @ self.x
+        self.rtc.d_control[nControl].set_com(self.u,self.u.size)
+
