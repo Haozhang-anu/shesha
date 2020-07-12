@@ -1,0 +1,76 @@
+diam       : meter     : Telescope diameter
+8.0
+obs        : percent   : Central obscuration
+0.16
+tFrame     : second    : frame rate
+0.001
+nW         :           : number of WFS
+9
+nLgs       :           : number of LGS
+8
+nTS        :           : number of Truth Sensor
+25
+nTarget    :           : number of Target
+1
+Nssp       :           : number of subaperture per wfs along the diameter
+40 40 40 40 40 40 40 40 40 
+fracsub    : %         : Minimal illumination fraction for valid subap
+-1
+gsAlt      : meter^-1  : inverse of lazer altitude
+1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 0 
+type       :           : guide star type (1:NGS, 2:LGS)
+2 2 2 2 2 2 2 2 1 
+alphaX_as  : arcsec    : pointing direction of the wfs on x axis
+17.5 12.374368670764582 1.0715659492539341e-15 -12.37436867076458 -17.5 -12.374368670764584 -3.214697847761802e-15 12.374368670764579 0.0 
+alphaY_as  : arcsec    : pointing direction of the wfs on y axis
+0.0 12.37436867076458 17.5 12.374368670764582 2.1431318985078682e-15 -12.37436867076458 -17.5 -12.374368670764584 0.0 
+XPup       : meter     : pupil shift of the WFS
+0 0 0 0 0 0 0 0 0 
+YPup       : meter     : pupil shift of the WFS
+0 0 0 0 0 0 0 0 0 
+thetaML    :           : rotation of the microlenses
+0 0 0 0 0 0 0 0 0 
+thetaCam   :           : rotation of the camera
+0 0 0 0 0 0 0 0 0 
+sensibility:           : sensitivity coeff of this WFS
+1 1 1 1 1 1 1 1 1 
+tracking   : arcsec^2  : telescope tracking error parameters (x^2, y^2 and xy)
+1 1 1
+pasDPHI    :           : Precision of DPHI precomputation. //deprecated
+0.0001
+ncpu       :           : Number of CPU used (only with openMP)
+1
+mrNGS      :           : magnitude of NGS
+8.0 
+lgsFlux    : (ph/m2/s) : LGS photon return at M1
+2200000.0
+ngsPixSize : arcsec    : NGS pixel size
+0.45558739079827404
+lgsPixSize : arcsec    : LGS pixel size
+0.45558739079827404
+lambdaNGS  : meter     : wave length for NGS
+5.89e-07
+lambdaLGS  : meter     : wave length for LGS
+5.89e-07
+bdw_m      : meter     : bandwidth
+3.3e-07
+throughNGS : percent   : transmission for NGS
+0.5
+throughLGS : percent   : transmission for LGS
+0.5
+throughAtm : percent   : atmosphere transmission
+1.0
+RON        : nb of e-  : Read Out Noise 
+1
+lgsCst     :           : constant on lgs (simulate that LGS cannot measure tip-tilt and focus)
+0.0
+spotWidth  : arcsec    : lazer width
+0.8
+lgsAlt     : meter     : sodium layer altitude
+90000.0
+lgsDepth   : meter     : depth of the sodium layer
+5000.0
+targetX_as : arcsec    :  taget direction on x axis
+-19.0 -9.5 0.0 9.5 19.0 -19.0 -9.5 0.0 9.5 19.0 -19.0 -9.5 0.0 9.5 19.0 -19.0 -9.5 0.0 9.5 19.0 -19.0 -9.5 0.0 9.5 19.0 0.0 
+targetY_as : arcsec    :  taget direction on y axis
+-19.0 -19.0 -19.0 -19.0 -19.0 -9.5 -9.5 -9.5 -9.5 -9.5 0.0 0.0 0.0 0.0 0.0 9.5 9.5 9.5 9.5 9.5 19.0 19.0 19.0 19.0 19.0 0.0 

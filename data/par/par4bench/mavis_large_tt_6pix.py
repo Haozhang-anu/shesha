@@ -13,7 +13,7 @@ p_loop.set_ittime(0.001)
 ###################
 # GEOM
 p_geom = conf.Param_geom()
-p_geom.set_zenithangle(30.)
+p_geom.set_zenithangle(30.) # cos(30)
 
 ###################
 # TEL
@@ -26,8 +26,8 @@ p_tel.set_cobs(0.16) # need to fix projector before changing this I think
 p_atmos = conf.Param_atmos()
 p_atmos.set_r0(0.1289)
 p_atmos.set_nscreens(10)
-p_atmos.set_frac([0.59, 0.02, 0.04, 0.06, 0.01, 0.05, 0.09, 0.04,  0.05,  0.05])
-p_atmos.set_alt([30,  140,  281,  562, 1125, 2250, 4500, 7750, 11000, 14000])
+p_atmos.set_frac([0.59, 0.02, 0.04, 0.06, 0.01, 0.05, 0.09, 0.04,  0.05,  0.05])  # cn2 
+p_atmos.set_alt([30,  140,  281,  562, 1125, 2250, 4500, 7750, 11000, 14000]) # h
 p_atmos.set_windspeed([ 6.6,  5.9,  5.1,  4.5,  5.1,  8.3, 16.3, 30.2,  34.3,  17.5])
 p_atmos.set_winddir([0.,  10.,  20.,  25.,   0.,  10.,  20.,  25.,    0.,   10.])
 p_atmos.set_L0([25., 25., 25., 25., 25., 25., 25., 25., 25., 25.])

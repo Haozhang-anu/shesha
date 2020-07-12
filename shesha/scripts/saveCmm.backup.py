@@ -107,7 +107,7 @@ if __name__ == "__main__":
     sup=supervisor  
     sim=sup._sim  
     conf=sup.config  
-    sup.reset()
+    sup.reset  
     from shesha.util.writers import yao  
     from shesha.util import fits_io  
     from importlib import reload  
@@ -118,12 +118,7 @@ if __name__ == "__main__":
 #    tao.VARS["TAOPATH"]="/home/hzhang/moao_dev/chameleon/build_ndoucet/testHalf/install/bin"  
 #    tao.VARS["STARPU_FLAGS"]="STARPU_SCHED=dmdas STARPU_SILENT=1"  
 #    tao.check()
-    rand_id = str(int(np.random.random(1)*100000))
-    lgs0_y = sim.config.p_wfs_lgs[0].get_validpuppixy()
-    lgs0_x = sim.config.p_wfs_lgs[0].get_validpuppixx()
-    np.save("buffer/lgs0_y"+rand_id+".npy",lgs0_y)
-    np.save("buffer/lgs0_x"+rand_id+".npy",lgs0_x)
-    M = fits_io.fitsread("./M_mcao.fits").T
+    M = fits_io.fitsread("./M_mcao.fits")
     sup.setCommandMatrix(M)
     sim.rtc.d_control[0].set_polc(True)
     sim.rtc.d_control[0].set_imat(conf.p_controllers[0]._imat)
@@ -143,7 +138,6 @@ if __name__ == "__main__":
         dd,ss = sup._sim.loopPOLC(nniter)
         np.save("buffer/dd_"+save_id+".npy",dd)
         np.save("buffer/ss_"+save_id+".npy",ss)
-
 #    dd,ss = tao.run(sup,tao.mcao,nIter=nniter,initialisation=1,nfilt=150,WFS="lgs",DM_TT=False,lgstt=0.0) 
 
 

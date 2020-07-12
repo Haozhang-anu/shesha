@@ -647,7 +647,6 @@ def Map_and_Mat (sup):
     # all parametres ready!
     CovMap_ana = CovMap_from_Cn2(CovMapMask,telDiam,zenith,shnxsub,r0,Cn2,l0,alt,nwfs,gspos,gsalt)
     Cmm_ana = Mat_from_CovMap(CovMap_ana,nwfs,validsubs,shnxsub)
-
     return CovMap_ana.astype('float64'),Cmm_ana.astype('float64')
 #####======
 ##### Part 6: Merging test for numerical covariance
