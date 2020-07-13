@@ -645,7 +645,10 @@ def Map_and_Mat (sup):
         gsalt[ii] = sim.config.p_wfs_lgs[ii].get_gsalt()
 
     # all parametres ready!
+    np.savez("sysconfg.npz",CovMapMask=CovMapMask, telDiam = telDiam, zenith = zenith, shnxsub = shnxsub,
+    r0=r0, Cn2=Cn2, l0=l0, alt=alt, nwfs=nwfs, gspos=gspos, gsalt=gsalt,validsubs = validsubs)
     CovMap_ana = CovMap_from_Cn2(CovMapMask,telDiam,zenith,shnxsub,r0,Cn2,l0,alt,nwfs,gspos,gsalt)
+    print(CovMap_ana[0,0])
     Cmm_ana = Mat_from_CovMap(CovMap_ana,nwfs,validsubs,shnxsub)
     return CovMap_ana.astype('float64'),Cmm_ana.astype('float64')
 #####======

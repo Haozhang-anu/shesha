@@ -65,33 +65,35 @@ if __name__ == "__main__":
     compute_tar_psf = not arguments["--fast"]
 
     # Get parameters from file
-    if arguments["--bench"]:
-        from shesha.supervisor.benchSupervisor import BenchSupervisor as Supervisor
-    elif arguments["--brahma"]:
-        from shesha.supervisor.canapassSupervisor import CanapassSupervisor as Supervisor
-    else:
-        from shesha.supervisor.compassSupervisor import CompassSupervisor as Supervisor
+    # if arguments["--bench"]:
+    #     from shesha.supervisor.benchSupervisor import BenchSupervisor as Supervisor
+    # elif arguments["--brahma"]:
+    #     from shesha.supervisor.canapassSupervisor import CanapassSupervisor as Supervisor
+    # else:
+    from shesha.supervisor.compassSupervisor import CompassSupervisor as Supervisor
 
     if arguments["--DB"]:
         use_DB = True
-
+    print(param_file)
     supervisor = Supervisor(param_file, use_DB=use_DB)
 
-    if arguments["--devices"]:
-        supervisor.config.p_loop.set_devices([
-                int(device) for device in arguments["--devices"].split(",")
-        ])
-    if arguments["--generic"]:
-        supervisor.config.p_controllers[0].set_type("generic")
-        print("Using GENERIC controller...")
+    # if arguments["--devices"]:
+    #     print("here")
+    #     supervisor.config.p_loop.set_devices([
+    #             int(device) for device in arguments["--devices"].split(",")
+    #     ])
+    # if arguments["--generic"]:
+    #     print("generic")
+    #     supervisor.config.p_controllers[0].set_type("generic")
+    #     print("Using GENERIC controller...")
 
     supervisor.initConfig()
-    if arguments["--niter"]:
-        supervisor.loop(int(arguments["--niter"]), compute_tar_psf=compute_tar_psf)
-    else:
-        supervisor.loop(supervisor.config.p_loop.niter, compute_tar_psf=compute_tar_psf)
+    # if arguments["--niter"]:
+    #     supervisor.loop(int(arguments["--niter"]), compute_tar_psf=compute_tar_psf)
+    # else:
+    #     supervisor.loop(supervisor.config.p_loop.niter, compute_tar_psf=compute_tar_psf)
 
-    if arguments["--interactive"]:
-        from shesha.util.ipython_embed import embed
-        from os.path import basename
-        embed(basename(__file__), locals())
+    # if arguments["--interactive"]:
+    #     from shesha.util.ipython_embed import embed
+    #     from os.path import basename
+    #     embed(basename(__file__), locals())

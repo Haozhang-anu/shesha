@@ -186,6 +186,7 @@ class Simulator:
             self.c = carmaWrap_context.get_instance_ngpu(self.config.p_loop.devices.size,
                                                          self.config.p_loop.devices)
         else:
+            print(carmaWrap_context)
             self.c = carmaWrap_context.get_instance_1gpu(self.config.p_loop.devices[0])
         # self.force_context()
 

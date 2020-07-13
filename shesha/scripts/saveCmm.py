@@ -103,47 +103,39 @@ if __name__ == "__main__":
         from shesha.util.ipython_embed import embed
         from os.path import basename
         embed(basename(__file__), locals())
+    covmap, cmm = Map_and_Mat(supervisor)
+    # sup=supervisor  
+    # sim=sup._sim  
+    # conf=sup.config  
+    # sup.reset()
+    # from shesha.util.writers import yao  
+    # from shesha.util import fits_io  
+    # from importlib import reload  
+    # rand_id = str(int(np.random.random(1)*100000))
+    # lgs0_y = sim.config.p_wfs_lgs[0].get_validpuppixy()
+    # lgs0_x = sim.config.p_wfs_lgs[0].get_validpuppixx()
+    # np.save("buffer/lgs0_y"+rand_id+".npy",lgs0_y)
+    # np.save("buffer/lgs0_x"+rand_id+".npy",lgs0_x)
+    # M = fits_io.fitsread("./M_mcao.fits").T
+    # sup.setCommandMatrix(M)
+    # sim.rtc.d_control[0].set_polc(True)
+    # sim.rtc.d_control[0].set_imat(conf.p_controllers[0]._imat)
+    # sim.rtc.d_control[0].set_gain(conf.p_controllers[0].gain)
+    # if sim.config.p_atmos.get_windspeed()[0]>100:
+    #     nniter = 10000
+    # else:
+    #     nniter = 50000
+    # nniter = 1000
+    # imat = np.array(sup._sim.rtc.d_control[0].d_imat)
+    # np.save("/home/hongy0a/gitrepo/shesha/buffer/imat_hzhang.npy",imat)
+    # for ii in range(20):
+    #     print("loop ", ii)
+    #     dd=[]
+    #     ss=[]
+    #     save_id = str(nniter)+"_"+str(ii+1)
+    #     dd,ss = sup._sim.loopPOLC(nniter)
+    #     np.save("buffer/dd_"+save_id+".npy",dd)
+    #     np.save("buffer/ss_"+save_id+".npy",ss)
 
-    sup=supervisor  
-    sim=sup._sim  
-    conf=sup.config  
-    sup.reset()
-    from shesha.util.writers import yao  
-    from shesha.util import fits_io  
-    from importlib import reload  
-#    from shesha.util import tao  
-#    #from shesha.util import psfMap  
-#    tao.VARS["GPUIDS"]="1"   
-#    tao.VARS["INPUTPATH"]="./"   
-#    tao.VARS["TAOPATH"]="/home/hzhang/moao_dev/chameleon/build_ndoucet/testHalf/install/bin"  
-#    tao.VARS["STARPU_FLAGS"]="STARPU_SCHED=dmdas STARPU_SILENT=1"  
-#    tao.check()
-    rand_id = str(int(np.random.random(1)*100000))
-    lgs0_y = sim.config.p_wfs_lgs[0].get_validpuppixy()
-    lgs0_x = sim.config.p_wfs_lgs[0].get_validpuppixx()
-    np.save("buffer/lgs0_y"+rand_id+".npy",lgs0_y)
-    np.save("buffer/lgs0_x"+rand_id+".npy",lgs0_x)
-    M = fits_io.fitsread("./M_mcao.fits").T
-    sup.setCommandMatrix(M)
-    sim.rtc.d_control[0].set_polc(True)
-    sim.rtc.d_control[0].set_imat(conf.p_controllers[0]._imat)
-    sim.rtc.d_control[0].set_gain(conf.p_controllers[0].gain)
-    if sim.config.p_atmos.get_windspeed()[0]>100:
-        nniter = 10000
-    else:
-        nniter = 50000
-    nniter = 1000
-    imat = np.array(sup._sim.rtc.d_control[0].d_imat)
-    np.save("/home/hongy0a/gitrepo/shesha/buffer/imat_hzhang.npy",imat)
-    for ii in range(20):
-        print("loop ", ii)
-        dd=[]
-        ss=[]
-        save_id = str(nniter)+"_"+str(ii+1)
-        dd,ss = sup._sim.loopPOLC(nniter)
-        np.save("buffer/dd_"+save_id+".npy",dd)
-        np.save("buffer/ss_"+save_id+".npy",ss)
-
-#    dd,ss = tao.run(sup,tao.mcao,nIter=nniter,initialisation=1,nfilt=150,WFS="lgs",DM_TT=False,lgstt=0.0) 
 
 
