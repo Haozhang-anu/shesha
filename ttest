@@ -1,0 +1,6 @@
+FILES="mavis1.py mavis2.py mavis3.py mavis4.py mavis5.py"
+for f in $FILES
+do
+    ipython shesha/scripts/saveCmm.py data/par/par4bench/$f
+done
+

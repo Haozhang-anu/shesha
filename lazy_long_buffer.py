@@ -107,10 +107,10 @@ def get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, fi
         pols = pols - pols.mean(axis=0)
         cmm = pols.T@pols / pols.shape[0]
         np.save("buffer/cmm_num_"+prefix+"_T_"+str(T)+"_buffer_every_"\
-                 +str(r_deci)+"_start_from_"+str(this_start)+".npy",cmm)
+                 +str(r_deci)+"_start_from_%06d.npy"%this_start,cmm)
         time_end = time.time()
         print("average diagonal value for this cmm = %.5f"%(np.average(cmm.diagonal())))
-        print("numerical cmm starting at "+str(this_start)+\
+        print("numerical cmm starting at %06d"%this_start+\
                " saved, time taken = %.3f"%(time_end-time_start))
         pols = []
         cmm  = []
@@ -273,7 +273,7 @@ def conf_to_Am1 (telDiam,zenith,validsubs,shnxsub,r0,l0,alt,nwfs,gspos,gsalt,tim
     #hdu = fits.PrimaryHDU(CovMap_ana)
     #hdu.writeto("CovMap_ana_full.fits",overwrite=1)
     #CovMap_ana = CovMap_ana * CovMapMask
-    Am1 = np.linalg.solve(optsolver.A.T@optsolver.A+np.eye(alt.shape[0])*0.0000001,optsolver.A.T)
+    Am1 = np.linalg.solve(optsolver.A.T@optsolver.A,optsolver.A.T)
     return Am1,optsolver
 
 
@@ -354,12 +354,9 @@ if __name__ == "__main__":
 
     n_batch = 3 #number of cmm to be saved
     T = 250 # integration time
-    r_deci = 40 # buffer_every
+    r_deci = 20 # buffer_every
 
-    #get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, file_size = 50000, prefix = "long_buffer")
-
-
-    
+    get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, file_size = 50000, prefix = "long_buffer")
     Am1,optsolver = conf_to_Am1 (telDiam,zenith,validsubs,shnxsub,r0,l0,alt,nwfs,gspos,gsalt)
     print(Am1.max())
     #b = optsolver.A@Cn2
@@ -367,14 +364,22 @@ if __name__ == "__main__":
     CovMat = np.load("buffer/Cmat_ana_full.npy")
     b      = mat_to_b(CovMat,nwfs,validsubs,shnxsub)
     x      = Am1@b
-    print("Cn2 calculated from analytical Cmat:",x)
-    
-    filenames = sorted(glob.glob("buffer/cmm_num_long_buffer_T_250*.npy"))
+    #print("Cn2 calculated from analytical Cmat:",x)
+    plt.figure()
+    plt.plot(x,'-k',linewidth=4,label='Analytical')
+
+    filenames = sorted(glob.glob("buffer/cmm_num_long_buffer_T_"+str(T)+"_buffer_every_"+str(r_deci)+"*.npy"))
     for filename in filenames:
         CovMat = np.load(filename)
         b      = mat_to_b(CovMat,nwfs,validsubs,shnxsub)
         x      = Am1@b
-        print("Cn2 calculated from file name: "+filename+" is: ",x)
+        #print("Cn2 calculated from file name: "+filename+" is: ",x)
+        plt.plot(x,linewidth=3,label=filename[-15:-4])
+    plt.legend(loc= "upper right")
+    plt.xlabel("layer number")
+    plt.ylabel("Cn2 fraction")
+    plt.title("Least Square fitting")
+
 
 
     '''

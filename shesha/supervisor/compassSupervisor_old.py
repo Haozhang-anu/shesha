@@ -161,9 +161,11 @@ class CompassSupervisor(AoSupervisor):
         Set a mask in the Fourier Plane of the given WFS
         """
         if newmask.shape != self.config.p_wfss[wfsnum].get_halfxy().shape:
-            print('Error : mask shape should be {}'.format(self.config.p_wfss[wfsnum].get_halfxy().shape))
+            print('Error : mask shape should be {}'.format(
+                    self.config.p_wfss[wfsnum].get_halfxy().shape))
         else:
-            self._sim.wfs.d_wfs[wfsnum].set_phalfxy(np.exp(1j * np.fft.fftshift(newmask)).astype(np.complex64).T)
+            self._sim.wfs.d_wfs[wfsnum].set_phalfxy(
+                    np.exp(1j * np.fft.fftshift(newmask)).astype(np.complex64).T)
 
     def setNoise(self, noise, numwfs=0, seed=1234):
         '''
@@ -189,12 +191,6 @@ class CompassSupervisor(AoSupervisor):
         Set or unset whether atmos is enabled when running loop (see singleNext)
         '''
         self._seeAtmos = enable
-
-    def set_frac_r0(self,frac):
-        if(frac.size != self._sim.atm.nscreens):
-            raise  ValueError("number of screen does not match")
-        self.config.p_atmos.frac=np.copy(frac.astype(np.float32))
-        self._sim.atm.set_frac(frac)
 
     def setGlobalR0(self, r0, reset_seed=-1):
         """
@@ -237,7 +233,7 @@ class CompassSupervisor(AoSupervisor):
         if (r == 0):
             print("GS magnitude is now %f on WFS %d" % (mag, numwfs))
 
-    def loop(self, n: int = 1, monitoring_freq: int = 100, abortThresh: float = 0., **kwargs):
+    def loop(self, n: int = 1, monitoring_freq: int = 100, **kwargs):
         """
         Perform the AO loop for n iterations
 
@@ -245,8 +241,7 @@ class CompassSupervisor(AoSupervisor):
             n: (int): (optional) Number of iteration that will be done
             monitoring_freq: (int): (optional) Monitoring frequency [frames]
         """
-        print("loop")
-        self._sim.loop(n, monitoring_freq=monitoring_freq, abortThresh=abortThresh, **kwargs)
+        self._sim.loop(n, monitoring_freq=monitoring_freq, **kwargs)
 
     def forceContext(self) -> None:
         '''
@@ -1528,4 +1523,3 @@ class CompassSupervisor(AoSupervisor):
 
         psfLE = self.getTarImage(tarnum, "le")
         return slopesdata, voltsdata, aiData, psfLE, srseList, srleList, gNPCAList, cubeData
-

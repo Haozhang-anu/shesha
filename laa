@@ -1,0 +1,20 @@
+if [ $1 == "-h" ]; then 
+    python argparser.py -h
+    exit 0
+fi
+
+python $SHESHA_ROOT/shesha/scripts/initForMLPC.py $1
+if [ $? -ne 0 ]; then
+    echo "Initialisation Failed!"
+    exit 1
+fi
+python laa.py $1 "${@:2:$#}"
+if [ $? -ne 0 ]; then
+    echo "Controller Build Failed!"
+    exit 2
+fi
+ipython -i $SHESHA_ROOT/shesha/scripts/run_polc.py $1
+if [ $? -ne 0 ]; then
+    echo "Run POLC Failed!"
+    exit 3
+fi
