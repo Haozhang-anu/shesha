@@ -5,6 +5,7 @@ from scipy import stats as st
 from astropy.io import fits
 import math
 import time
+import shesha
 import numpy as np
 from matplotlib import pyplot as plt
 from shesha.util.CovMap_from_Mat import Map_and_Mat,CovMap_from_Cn2, Mat_from_CovMap, DPHI, get_full_index_compass,MapMask_from_validsubs, CovMap_from_Mat
@@ -90,8 +91,8 @@ def get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, fi
             raise Exception("number of files and inds are not aligned!")
         for ii in range(len(f_list)):
             this_f = f_list[ii]
-            this_dd = np.load("buffer/dd_50000_"+str(this_f)+".npy").astype("float32")
-            this_ss = np.load("buffer/ss_50000_"+str(this_f)+".npy").astype("float32")
+            this_dd = np.load("buffer/dd_"+prefix+"_50000_"+str(this_f)+".npy").astype("float32")
+            this_ss = np.load("buffer/ss_"+prefix+"_50000_"+str(this_f)+".npy").astype("float32")
             print("number of slopes read this time: ",len(inds[ii]))
 
             if lazy_count == 0 :
@@ -350,6 +351,7 @@ def LM(dataset, rpt, option):
     rows = A.shape[0]
     M = A.shape[0]
     N = x_init.shape[0]
+    #print("hhhh")
     if not lm:
         maxiter = datapass * M // batchsize
     else:
@@ -367,7 +369,7 @@ def LM(dataset, rpt, option):
     rpt.chi2.append(1.)
     rpt.gdenom = norminf(A.T @ (A @ x_init - b))
     rpt.chi2denom = norm2((A @ x_init - b))
-    rpt.errordenom = norm2(x_init - x_sol)
+    #rpt.errordenom = norm2(x_init - x_sol)
     rpt.epochaccutime.append(0.0)
     x_new = x_init.copy()
     x_real = x_init.copy()
@@ -378,6 +380,7 @@ def LM(dataset, rpt, option):
     tau = 1.0
     k = 0
     s1 = time.time()
+    #print("iiii")
     if lm:
         randidx = np.arange(M)
     else:
@@ -397,6 +400,7 @@ def LM(dataset, rpt, option):
     e1 = time.time()
     v = 2
     itertime += e1-s1
+    #print("jjjj")
     while not found and k < maxiter:
         s1 = time.time()
         if not lm:
@@ -433,13 +437,14 @@ def LM(dataset, rpt, option):
                 v = 2*v
         e1 = time.time()
         itertime += e1 - s1
-        itererr = norm2(x_real - x_sol) / rpt.errordenom
-        if threscnt < len(option.threshold) and itererr < option.threshold[threscnt]:
-            rpt.thresvec.append(x_real.tolist())
-            rpt.threstime.append(itertime)
-            threscnt += 1
+        #print("kkkk")
+        #itererr = norm2(x_real - x_sol) / rpt.errordenom
+        #if threscnt < len(option.threshold) and itererr < option.threshold[threscnt]:
+        #    rpt.thresvec.append(x_real.tolist())
+        #    rpt.threstime.append(itertime)
+        #    threscnt += 1
         rpt.epochaccutime.append(itertime)
-        rpt.error.append(norm2(x_real - x_sol) / rpt.errordenom)
+        #rpt.error.append(norm2(x_real - x_sol) / rpt.errordenom)
         tmpgrad = A.T @ (A @ x_real - b)
         rpt.gnorm.append(norminf(tmpgrad) / rpt.gdenom)
         rpt.chi2.append(norm2(A @ x_real - b) / rpt.chi2denom)
@@ -449,7 +454,7 @@ def LM(dataset, rpt, option):
     rpt.algosol = list(x_real.copy())
 
 ############# more new functions from Yuxi
-def builddataset(optsolver, filename):
+def builddataset(optsolver, filename,alt_learn):
     cmmana = np.load(filename)
     dataset = Dataset()
     dataset.A = optsolver.A
@@ -457,11 +462,13 @@ def builddataset(optsolver, filename):
     dataset.b = optsolver.b
     #dataset.x_init = np.array([0.34,0.0200,0.0203,0.060000002,0.003000000,0.0500,0.090000,0.04000,0.05000,0.0500])
     #dataset.x_init = np.random.rand(dataset.A.shape[1])
-    dataset.x_init = np.array([0.59,0.0200,0.04,0.06,0.01,0.0500,0.090000,0.04000,0.05000,0.0500])
+    #dataset.x_init = np.array([0.59,0.0200,0.04,0.06,0.01,0.0500,0.090000,0.04000,0.05000,0.0500])
+    dataset.x_init = np.zeros(alt_learn.shape[0])#,0.0,0.0,0.0,0.000,0.00000,0.0000,0.000,0.000])
     #dataset.x_init = np.ones(10)
     dataset.x_sol = Cn2
     dataset.As = np.linalg.norm(optsolver.A,axis=1)**2
-    return dataset
+    this_value = (np.average(cmmana.diagonal())/0.17/(500e-9)**2*0.2**(1/3)/(1-1.525*(0.2/25)**(1/3))*2.35044e-11)**(-3/5)
+    return dataset,this_value
 
 def directmethod(dataset, Am1):
     x = Am1@dataset.b
@@ -471,7 +478,7 @@ def directmethod(dataset, Am1):
 def LMmethod(dataset):
     DATAPASS=100
     TIMEOUT=20
-    DATANAME="analytical"
+    DATANAME="numerical"
     CONSTRAINED = True
     option = Option()
     option.setattr('datapass', DATAPASS)
@@ -484,14 +491,50 @@ def LMmethod(dataset):
     option.setattr('threshold',[7e-1,2e-1,7e-2,2e-2])
     option.setattr('dataset',DATANAME)
     lmrpt = Reporter('./results/','LM',DATANAME,option)
+    #print("gggg")
     LM(dataset, lmrpt, option)
     return lmrpt
+
+##### saving sys config npz file
+def save_npz (sup,prefix = "2layer"):
+    '''
+    saving required parametres from supervisor
+    '''
+    if type(sup) != shesha.supervisor.compassSupervisor.CompassSupervisor:
+        raise Exception('No AO system found!')
+    sim  = sup._sim
+    tel  = sim.config.p_tel
+    geom = sim.config.p_geom
+    lgs0 = sim.config.p_wfs_lgs[0]#assume all lgs have same configuration
+    atmos= sim.config.p_atmos
+    shnxsub = lgs0.get_nxsub()
+    x_co = np.round(lgs0.get_validsubsx()/lgs0.get_npix()).astype("int")
+    y_co = np.round(lgs0.get_validsubsy()/lgs0.get_npix()).astype("int")
+    validsubs = get_full_index_compass(shnxsub,x_co,y_co)
+    nwfs = len(sim.config.p_wfs_lgs)
+    CovMapMask = np.tile(MapMask_from_validsubs(validsubs,shnxsub),[2*nwfs,2*nwfs])
+    telDiam = tel.get_diam()
+    zenith  = geom.get_zenithangle()
+    r0      = atmos.get_r0()
+    Cn2     = atmos.get_frac()
+    l0      = atmos.get_L0()
+    alt     = atmos.get_alt()*math.cos(zenith*np.pi/180)
+    gspos   = np.zeros([nwfs,2])
+    gsalt   = np.zeros([nwfs,1])
+    for ii in range(nwfs):
+        gspos[ii,0] = sim.config.p_wfs_lgs[ii].get_xpos()
+        gspos[ii,1] = sim.config.p_wfs_lgs[ii].get_ypos()
+        gsalt[ii] = sim.config.p_wfs_lgs[ii].get_gsalt()
+
+    np.savez("sysconfig_"+prefix+".npz",validsubs=validsubs,telDiam=telDiam,\
+              zenith=zenith,shnxsub=shnxsub,r0=r0,Cn2=Cn2,l0=l0,\
+              alt=alt,gspos=gspos,gsalt=gsalt,nwfs=nwfs,CovMapMask = CovMapMask)
 
 #############
 
 if __name__ == "__main__":
 
-    sysconfigfile = "sysconfig.npz"
+    sysconfigfile = "sysconfig_2layer.npz"
     npfile = np.load(sysconfigfile)
     print(npfile.files)
     validsubs=npfile['validsubs']
@@ -505,61 +548,88 @@ if __name__ == "__main__":
     nwfs = npfile['nwfs']
     gspos = npfile['gspos']
     gsalt = npfile['gsalt']
-    validsubs = npfile['validsubs']
+    #validsubs = npfile['validsubs']
 
-    n_batch = 20 #number of cmm to be saved
-    T = 250 # integration time
-    r_deci = 20 # buffer_every
-    #for ii in range(n_batch):
-    #get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, file_size = 50000, prefix = "long_buffer")
-    Am1,optsolver = conf_to_Am1 (telDiam,zenith,validsubs,shnxsub,r0,l0,alt,nwfs,gspos,gsalt)
-    #b = optsolver.A@Cn2
-    #CovMap_rec = b_to_map(nwfs,shnxsub,validsubs,b)
-    #CovMat = np.load("buffer/Cmat_ana_full.npy")
-    #b      = mat_to_b(CovMat,nwfs,validsubs,shnxsub)
-    #x      = Am1@b
+    n_batches = [5]
+    Ts        = [50]
+    r_decis   = [20]
+    for kk in range(len(Ts)):
 
-    filenames = sorted(glob.glob("buffer/cmm_num_long_buffer_T_"+str(T)+"_buffer_every_"+str(r_deci)+"*.npy"))
-    filenames = ['buffer/Cma']
-    cn2list = [Cn2]
-    labellist = ["Target"]
-    idlist  = [filename[-15:-4] for filename in filenames]
-    cnt = 0
+        n_batch = n_batches[kk] #number of cmm to be saved
+        T = Ts[kk] # integration time
+        r_deci = r_decis[kk] # buffer_every
+        prefix = "2layer"
+        #for ii in range(n_batch):
+        #get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, file_size = 50000, prefix = prefix)
+        
+        alt_learn = np.arange(0,20000,1000)
+        l0_learn  = np.ones(alt_learn.shape[0])*25.
+        #l0_learn  = l0
+        #alt_learn = alt
+        Am1,optsolver = conf_to_Am1 (telDiam,zenith,validsubs,shnxsub,r0,l0_learn,alt_learn,nwfs,gspos,gsalt)
+        #b = optsolver.A@Cn2
+        #CovMap_rec = b_to_map(nwfs,shnxsub,validsubs,b)
+        #CovMat = np.load("buffer/Cmat_ana_full.npy")
+        #b      = mat_to_b(CovMat,nwfs,validsubs,shnxsub)
+        #x      = Am1@b
 
-    for filename in filenames:
+        filenames = sorted(glob.glob("buffer/cmm_num_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"*.npy"))
+        #filenames = ['buffer/Cmat_ana_full_2layer.npy']
+        #sumcn2 = [np.sum(Cn2[0:ii+1]) for ii in range(Cn2.shape[0])]
+        that_value = 0.15049503594257221
+        cn2list = [list(np.array(Cn2)*that_value)]
+        labellist = ["Target"]
+        idlist  = [filename[-15:-4] for filename in filenames]
+        cnt = 0
 
-        dataset = builddataset(optsolver, filename)
-        print("begin calculating LM for file:",filename[-15:])
+        for filename in filenames:
+
+            dataset,this_value = builddataset(optsolver, filename,alt_learn)
+            print("begin calculating LM for file:",filename[-15:])
+            #directcn2 = directmethod(dataset, Am1)
+            #cn2list.append(directcn2)
+            #labellist.append("direct-T-"+str(T)+"-r-"+str(r_deci)+"_"+idlist[cnt])
+            lmrpt = LMmethod(dataset)
+            print (np.sum(np.array(lmrpt.algosol)))
+            #sumtemp = np.array([np.sum(lmrpt.algosol[0:ii+1]) for ii in range(len(lmrpt.algosol))])
+            
+            cn2list.append(list(np.array(lmrpt.algosol)*this_value))
+            labellist.append("LM-T-"+str(T)+"-r-"+str(r_deci)+"_"+idlist[cnt])
+            cnt += 1
+        #dataset = builddataset(optsolver, "buffer/Cmat_ana_full.npy")
         #directcn2 = directmethod(dataset, Am1)
         #cn2list.append(directcn2)
-        #labellist.append("direct-T-"+str(T)+"-r-"+str(r_deci)+"_"+idlist[cnt])
-        lmrpt = LMmethod(dataset)
-        cn2list.append(lmrpt.algosol)
-        labellist.append("LM-T-"+str(T)+"-r-"+str(r_deci)+"_"+idlist[cnt])
-        cnt += 1
-    #dataset = builddataset(optsolver, "buffer/Cmat_ana_full.npy")
-    #directcn2 = directmethod(dataset, Am1)
-    #cn2list.append(directcn2)
-    #labellist.append("Analytical CovMap")
+        #labellist.append("Analytical CovMap")
+        
+        cn2sum = np.zeros(alt_learn.shape[0])
+        plt.figure()
+        for ii in range(len(cn2list)):
+            if ii == 0:
+                #plt.plot(alt, Cn2,'*k',markersize = 12,label=labellist[ii])
+                plt.step(np.concatenate([[0],np.array(alt),[19000]]),np.cumsum(np.concatenate([[0],np.array(cn2list[ii]),[0]])),where="post")
+            if ii>0:
+                #plt.plot(alt,cn2list[ii],'*',label=labellist[ii])
+                cn2sum += cn2list[ii]
+        #cn2sum -= cn2list[-1]
+        cn2avg = cn2sum/cnt
+        cn2avg_cum = np.cumsum(cn2avg)
+        cn2LM  = np.cumsum(np.array(cn2list[1:]),axis=1)
+        cn2err = np.zeros((2,alt_learn.shape[0]))
+        cn2err[0,:]= cn2avg_cum-np.min(cn2LM,axis=0)
+        cn2err[1,:]= np.max(cn2LM,axis=0)-cn2avg_cum
+
+        #diff = np.linalg.norm(cn2avg-Cn2)
+        plt.errorbar(alt_learn,cn2avg_cum,yerr=cn2err,fmt='x',marker ='x', ms= 8,uplims=True, lolims=True,label="LM averaged")
+        plt.legend(loc="upper right")
+        #plt.ylim(-0.05,0.7)
+        plt.grid(b=True, which='major', color='#666666', linestyle='-') 
+        plt.title("LM with init = 0.0, T = "+str(T)+", r = "+str(r_deci)+",nbatch = "+str(cnt),fontsize=14)
+        plt.ylabel(r"$C_n^2$",fontsize=14) 
+        plt.xlabel("Layer",fontsize=14)
+        plt.savefig("fig/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_2layer.png")
+        print("fig saved to "+"fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_2layer.png!")
+        #plt.close()
     
-    cn2sum = Cn2*0
-    plt.figure()
-    for ii in range(len(cn2list)):
-        if ii == 0:
-            plt.plot(cn2list[ii],'-k',linewidth = 3,label=labellist[ii])
-        if ii>0:
-            plt.plot(cn2list[ii],linewidth = 2,label=labellist[ii])
-            cn2sum += cn2list[ii]
-    #cn2sum -= cn2list[-1]
-    cn2avg = cn2sum/cnt
-    diff = np.linalg.norm(cn2avg-Cn2)
-    plt.plot(cn2avg,'--',linewidth=3,label="LM averaged")
-    plt.legend(loc="upper right") 
-    plt.grid(b=True, which='major', color='#666666', linestyle='-') 
-    plt.title("LM with init, avg diff = %.4f"%diff,fontsize=14)
-    plt.ylabel(r"$C_n^2$",fontsize=14) 
-    plt.xlabel("Layer",fontsize=14)
-    plt.savefig("fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"init_1.png")
     '''
     #below is doing block-wise linear fit for numerical cmm v.s. anlytical cmm
 

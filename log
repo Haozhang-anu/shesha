@@ -114,17 +114,17 @@ tile size: 1000
 nmeas    : 18368
 nmeasts  : 2296
 nact     : 4744
-nLayers  : 10
+nLayers  : 2
 nTargets : 1
 nrefine  : 1
 nObs     : 1
 nTarget  : 1
 ========================================
 Performances:  time (s)   GFlop/s
-allocation     0.820511
-preprocess     0.034198
-matcov         55.7632  23.6115
-reconstructor  8.97533  402.794
-refine         64.7587
-computation    8.97533  549.49
-total          99.5328  49.5501
+allocation     0.823112
+preprocess     0.00634623
+matcov         13.1778  22.2102
+reconstructor  8.31152  434.963
+refine         21.4998
+computation    8.31152  470.177
+total          56.0187  69.7604
