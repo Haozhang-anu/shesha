@@ -25,7 +25,7 @@ p_tel.set_cobs(0.16) # need to fix projector before changing this I think
 ###################
 # ATMOS
 p_atmos = conf.Param_atmos()
-p_atmos.set_r0(0.1289/math.cos(30*np.pi/180)**0.6) # 
+p_atmos.set_r0(0.1289/math.cos(30*np.pi/180)**0.6) # change to * next time!
 p_atmos.set_nscreens(2)
 p_atmos.set_frac([0.5, 0.5])#, 0.04, 0.06, 0.01, 0.05, 0.09, 0.04,  0.05,  0.05])
 p_atmos.set_alt([4000,  12000])#,  281,  562, 1125, 2250, 4500, 7750, 11000, 14000])

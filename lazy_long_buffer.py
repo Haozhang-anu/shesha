@@ -550,9 +550,9 @@ if __name__ == "__main__":
     gsalt = npfile['gsalt']
     #validsubs = npfile['validsubs']
 
-    n_batches = [5]
-    Ts        = [50]
-    r_decis   = [20]
+    n_batches = [3]
+    Ts        = [250]
+    r_decis   = [40]
     for kk in range(len(Ts)):
 
         n_batch = n_batches[kk] #number of cmm to be saved
@@ -560,9 +560,9 @@ if __name__ == "__main__":
         r_deci = r_decis[kk] # buffer_every
         prefix = "2layer"
         #for ii in range(n_batch):
-        #get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, file_size = 50000, prefix = prefix)
+        get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, file_size = 50000, prefix = prefix)
         
-        alt_learn = np.arange(0,20000,1000)
+        alt_learn = np.arange(0,20000,200)
         l0_learn  = np.ones(alt_learn.shape[0])*25.
         #l0_learn  = l0
         #alt_learn = alt
@@ -574,12 +574,18 @@ if __name__ == "__main__":
         #x      = Am1@b
 
         filenames = sorted(glob.glob("buffer/cmm_num_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"*.npy"))
-        #filenames = ['buffer/Cmat_ana_full_2layer.npy']
+        #filenames.append('buffer/Cmat_ana_full_2layer.npy')
         #sumcn2 = [np.sum(Cn2[0:ii+1]) for ii in range(Cn2.shape[0])]
         that_value = 0.15049503594257221
-        cn2list = [list(np.array(Cn2)*that_value)]
+        cn2list = [np.array(Cn2)*that_value]
         labellist = ["Target"]
         idlist  = [filename[-15:-4] for filename in filenames]
+        dataset,this_value = builddataset(optsolver, 'buffer/Cmat_ana_full_2layer.npy',alt_learn)
+        lmrpt = LMmethod(dataset)
+        print (np.sum(np.array(lmrpt.algosol)))
+        cn2list.append(np.array(lmrpt.algosol)*this_value)
+        labellist.append("analytical")
+
         cnt = 0
 
         for filename in filenames:
@@ -593,7 +599,7 @@ if __name__ == "__main__":
             print (np.sum(np.array(lmrpt.algosol)))
             #sumtemp = np.array([np.sum(lmrpt.algosol[0:ii+1]) for ii in range(len(lmrpt.algosol))])
             
-            cn2list.append(list(np.array(lmrpt.algosol)*this_value))
+            cn2list.append(np.array(lmrpt.algosol)*this_value)
             labellist.append("LM-T-"+str(T)+"-r-"+str(r_deci)+"_"+idlist[cnt])
             cnt += 1
         #dataset = builddataset(optsolver, "buffer/Cmat_ana_full.npy")
@@ -601,33 +607,70 @@ if __name__ == "__main__":
         #cn2list.append(directcn2)
         #labellist.append("Analytical CovMap")
         
-        cn2sum = np.zeros(alt_learn.shape[0])
+                
         plt.figure()
+        cn2sum = np.zeros(alt_learn.shape[0])
         for ii in range(len(cn2list)):
             if ii == 0:
-                #plt.plot(alt, Cn2,'*k',markersize = 12,label=labellist[ii])
-                plt.step(np.concatenate([[0],np.array(alt),[19000]]),np.cumsum(np.concatenate([[0],np.array(cn2list[ii]),[0]])),where="post")
-            if ii>0:
+                #plt.plot(alt, cn2list[ii],'*k',markersize = 12-ii*8,label=labellist[ii])
+                plt.step(np.concatenate([[0],np.array(alt),[19000]]),np.cumsum(np.concatenate([[0],np.array(cn2list[ii]),[0]])),where="post",label="Target")
+            if ii == 1:
+                plt.plot(alt_learn, np.cumsum(cn2list[ii]),'*r',markersize = 12-ii*4,label=labellist[ii])
+            if ii>1:
                 #plt.plot(alt,cn2list[ii],'*',label=labellist[ii])
                 cn2sum += cn2list[ii]
         #cn2sum -= cn2list[-1]
         cn2avg = cn2sum/cnt
         cn2avg_cum = np.cumsum(cn2avg)
         cn2LM  = np.cumsum(np.array(cn2list[1:]),axis=1)
+        #cn2LM  = np.array(cn2list[1:])
         cn2err = np.zeros((2,alt_learn.shape[0]))
-        cn2err[0,:]= cn2avg_cum-np.min(cn2LM,axis=0)
-        cn2err[1,:]= np.max(cn2LM,axis=0)-cn2avg_cum
-
-        #diff = np.linalg.norm(cn2avg-Cn2)
-        plt.errorbar(alt_learn,cn2avg_cum,yerr=cn2err,fmt='x',marker ='x', ms= 8,uplims=True, lolims=True,label="LM averaged")
+        cn2err[0,:]= np.std(cn2LM,axis=0)
+        cn2err[1,:]= np.std(cn2LM,axis=0)
+        #plt.plot(alt_learn, cn2avg,'*',markersize = 12,label="LM averaged")
+        #plt.errorbar(alt_learn,cn2avg_cum,yerr=cn2err,fmt='x',marker ='x', ms= 4, mew =2,uplims=True, lolims=True,label="LM averaged")
+        plt.errorbar(alt_learn,cn2avg_cum,yerr=cn2err,fmt='X',marker ='X', ms= 6, mew = 0.5,uplims=True, lolims=True,label="LM averaged")
+        plt.legend(loc="lower right")
+        #plt.ylim(-0.05,0.7)
+        plt.grid(b=True, which='major', color='#666666', linestyle='-') 
+        plt.title("LM with init = 0.0, T = "+str(T)+", r = "+str(r_deci)+", nbatch = "+str(cnt)+", cumulative",fontsize=14)
+        #plt.title("LM with init = 0.0, analytical CovMap",fontsize=14)
+        plt.ylabel(r"$C_n^2$ / m",fontsize=14) 
+        plt.xlabel("Layer alt / m",fontsize=14)
+        plt.xticks(np.arange(0,24000,4000))
+        #plt.savefig("fig/LMresult_ana_init_0_learn_100layer.png")
+        plt.savefig("fig/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_100layer_cum.png")
+        print("fig saved to "+"fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_100layer_cum.png!")
+        np.save("buffer/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_cum.npy",np.array(cn2list))
+        #np.save("buffer/LMresult_ana_init_0_learn_100layer.npy",np.array(cn2list))
+        plt.figure()
+        cn2sum = np.zeros(alt_learn.shape[0])
+        for ii in range(2):
+            if ii == 0:
+                plt.plot(alt, cn2list[ii],'*k',markersize = 12-ii*8,label=labellist[ii])
+                #plt.step(np.concatenate([[0],np.array(alt),[19000]]),np.concatenate([[0],np.array(cn2list[ii]),[0]]),where="post",label="Target")
+            if ii == 1:
+                plt.plot(alt_learn, cn2list[ii],'*r',markersize = 12-ii*4,label=labellist[ii])
+        #cn2avg = cn2sum/cnt
+        cn2LM  = np.array(cn2list[1:])
+        cn2err = np.zeros((2,alt_learn.shape[0]))
+        cn2err[0,:]= np.std(cn2LM,axis=0)
+        cn2err[1,:]= np.std(cn2LM,axis=0)
+        plt.errorbar(alt_learn,cn2avg,yerr=cn2err,fmt='X',marker ='X', ms= 6, mew = 0.5,uplims=True, lolims=True,label="LM averaged")
         plt.legend(loc="upper right")
         #plt.ylim(-0.05,0.7)
         plt.grid(b=True, which='major', color='#666666', linestyle='-') 
-        plt.title("LM with init = 0.0, T = "+str(T)+", r = "+str(r_deci)+",nbatch = "+str(cnt),fontsize=14)
-        plt.ylabel(r"$C_n^2$",fontsize=14) 
-        plt.xlabel("Layer",fontsize=14)
-        plt.savefig("fig/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_2layer.png")
-        print("fig saved to "+"fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_2layer.png!")
+        plt.title("LM with init = 0.0, T = "+str(T)+", r = "+str(r_deci)+", nbatch = "+str(cnt),fontsize=14)
+        #plt.title("LM with init = 0.0, analytical CovMap",fontsize=14)
+        plt.ylabel(r"$C_n^2$ / m",fontsize=14) 
+        plt.xlabel("Layer alt / m",fontsize=14)
+        plt.xticks(np.arange(0,24000,4000))
+        #plt.savefig("fig/LMresult_ana_init_0_learn_100layer.png")
+        plt.savefig("fig/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_100layer.png")
+        print("fig saved to "+"fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_100layer.png!")
+        #np.save("buffer/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_cum.npy",np.array(cn2list))
+
+
         #plt.close()
     
     '''
