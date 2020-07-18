@@ -166,6 +166,7 @@ def conf_to_Am1 (telDiam,zenith,validsubs,shnxsub,r0,l0,alt,nwfs,gspos,gsalt,tim
     X0,Y0      = np.meshgrid(x0,y0) ## 79*79
     X0         = X0*subAperSize
     Y0         = Y0*subAperSize
+    #supervisor._sim.config.p_wfs_lgs[ii]
     n_deltaY   = Y0.shape[0]
     k         = 1/subAperSize/subAperSize
     lambda2   = (0.5e-6/2/np.pi/astor)**2
@@ -374,7 +375,7 @@ def LM(dataset, rpt, option):
     x_new = x_init.copy()
     x_real = x_init.copy()
     eps1 = 1e-16
-    eps2 = 1e-16
+    eps2 = 1e-3
     threscnt = 0
     itertime = 0.0
     tau = 1.0
@@ -416,6 +417,7 @@ def LM(dataset, rpt, option):
         hlm = linalg.solve_triangular(L.T, sol, lower=0)
         if(np.linalg.norm(hlm) < eps2*(np.linalg.norm(x_real)+eps2)):
             found = True
+            print("found! hlm norm = %.3f, eps2 = %.3f"%(np.linalg.norm(hlm),eps2*(np.linalg.norm(x_real)+eps2)))
         else:
             for i in range(N):
                 x_new[i] += hlm[i]
@@ -451,6 +453,7 @@ def LM(dataset, rpt, option):
         if itertime > timeout:
             print(k)
             break
+    print("LM stopped, k = %03d, maxiter = %03d"%(k,maxiter))
     rpt.algosol = list(x_real.copy())
 
 ############# more new functions from Yuxi
@@ -476,8 +479,8 @@ def directmethod(dataset, Am1):
     return x
 
 def LMmethod(dataset):
-    DATAPASS=100
-    TIMEOUT=20
+    DATAPASS=200
+    TIMEOUT=100
     DATANAME="numerical"
     CONSTRAINED = True
     option = Option()
@@ -550,9 +553,9 @@ if __name__ == "__main__":
     gsalt = npfile['gsalt']
     #validsubs = npfile['validsubs']
 
-    n_batches = [3]
-    Ts        = [250]
-    r_decis   = [40]
+    n_batches = [5]
+    Ts        = [50]
+    r_decis   = [100]
     for kk in range(len(Ts)):
 
         n_batch = n_batches[kk] #number of cmm to be saved
@@ -560,9 +563,9 @@ if __name__ == "__main__":
         r_deci = r_decis[kk] # buffer_every
         prefix = "2layer"
         #for ii in range(n_batch):
-        get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, file_size = 50000, prefix = prefix)
+        #get_num_cmm (n_batch, T, r_deci, framerate=0.001, total_buffer = 1000000, file_size = 50000, prefix = prefix)
         
-        alt_learn = np.arange(0,20000,200)
+        alt_learn = np.arange(0,20000,2000)
         l0_learn  = np.ones(alt_learn.shape[0])*25.
         #l0_learn  = l0
         #alt_learn = alt
@@ -573,7 +576,7 @@ if __name__ == "__main__":
         #b      = mat_to_b(CovMat,nwfs,validsubs,shnxsub)
         #x      = Am1@b
 
-        filenames = sorted(glob.glob("buffer/cmm_num_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"*.npy"))
+        filenames = sorted(glob.glob("buffer/cmm_num_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_start_from"+"*.npy"))
         #filenames.append('buffer/Cmat_ana_full_2layer.npy')
         #sumcn2 = [np.sum(Cn2[0:ii+1]) for ii in range(Cn2.shape[0])]
         that_value = 0.15049503594257221
@@ -590,12 +593,18 @@ if __name__ == "__main__":
 
         for filename in filenames:
 
+            ts = time.time()
+
             dataset,this_value = builddataset(optsolver, filename,alt_learn)
             print("begin calculating LM for file:",filename[-15:])
             #directcn2 = directmethod(dataset, Am1)
             #cn2list.append(directcn2)
             #labellist.append("direct-T-"+str(T)+"-r-"+str(r_deci)+"_"+idlist[cnt])
             lmrpt = LMmethod(dataset)
+            te    = time.time()
+            print("LM finished! time taken = %.3f s!"%(te-ts))
+            print("gnorm: ",lmrpt.gnorm[-5:])
+            print("chi2: ",lmrpt.chi2[-5:])
             print (np.sum(np.array(lmrpt.algosol)))
             #sumtemp = np.array([np.sum(lmrpt.algosol[0:ii+1]) for ii in range(len(lmrpt.algosol))])
             
@@ -627,6 +636,7 @@ if __name__ == "__main__":
         cn2err = np.zeros((2,alt_learn.shape[0]))
         cn2err[0,:]= np.std(cn2LM,axis=0)
         cn2err[1,:]= np.std(cn2LM,axis=0)
+        print("std of estimation results [last 5 term]:",np.std(cn2LM,axis=0)[-5:])
         #plt.plot(alt_learn, cn2avg,'*',markersize = 12,label="LM averaged")
         #plt.errorbar(alt_learn,cn2avg_cum,yerr=cn2err,fmt='x',marker ='x', ms= 4, mew =2,uplims=True, lolims=True,label="LM averaged")
         plt.errorbar(alt_learn,cn2avg_cum,yerr=cn2err,fmt='X',marker ='X', ms= 6, mew = 0.5,uplims=True, lolims=True,label="LM averaged")
@@ -639,8 +649,8 @@ if __name__ == "__main__":
         plt.xlabel("Layer alt / m",fontsize=14)
         plt.xticks(np.arange(0,24000,4000))
         #plt.savefig("fig/LMresult_ana_init_0_learn_100layer.png")
-        plt.savefig("fig/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_100layer_cum.png")
-        print("fig saved to "+"fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_100layer_cum.png!")
+        plt.savefig("fig/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_10layer_cum.png")
+        print("fig saved to "+"fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_10layer_cum.png!")
         np.save("buffer/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_cum.npy",np.array(cn2list))
         #np.save("buffer/LMresult_ana_init_0_learn_100layer.npy",np.array(cn2list))
         plt.figure()
@@ -666,8 +676,8 @@ if __name__ == "__main__":
         plt.xlabel("Layer alt / m",fontsize=14)
         plt.xticks(np.arange(0,24000,4000))
         #plt.savefig("fig/LMresult_ana_init_0_learn_100layer.png")
-        plt.savefig("fig/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_100layer.png")
-        print("fig saved to "+"fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_100layer.png!")
+        plt.savefig("fig/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_10layer.png")
+        print("fig saved to "+"fig/LMresult_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_learn_10layer.png!")
         #np.save("buffer/LMresult_"+prefix+"_T_"+str(T)+"_buffer_every_"+str(r_deci)+"_nbatch_"+str(cnt)+"_init_0_cum.npy",np.array(cn2list))
 
 

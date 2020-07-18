@@ -605,6 +605,184 @@ def CovMap_from_Cn2 (CovMapMask,telDiam,zenith,shnxsub,r0,Cn2,l0,alt,nwfs,gspos,
     CovMap_ana = CovMap_ana * CovMapMask
     return CovMap_ana.astype('float64')
 
+
+
+def CMM_from_Cn2 (telDiam,zenith,shnxsub,xx,yy,r0,Cn2,l0,alt,nwfs,gspos,gsalt,timedelay=0,windspeed=[],winddir=[]):
+    '''
+    CMM_from_Cn2 (telDiam,zenith,shnxsub,xx,yy,r0,Cn2,l0,alt,nwfs,gspos,gsalt,timedelay=0,windspeed=[],winddir=[])
+
+    get analytical CMM from Cn2 profile and system configuration
+    loop over all combinations of WFS and layers, calculating covariance using Rod Conan model
+    wavelength is fixed at 500 nm, please check r0 before use
+
+    Update: Temporal difference included.
+
+    
+    telDiam: float, telescope diametre in metre
+    zenith: float, zenith angle in degree
+    shnxsub: int, number of subapertures along pupil diamtre
+    xx, yy: np 1d array, all valid subaperture's x/y coordinates [self centred] [in metres]
+    r0: float, global r0 at 500nm in metre
+    Cn2: np 1D array, same size as alt, fractions of every turbulence layer, will be normalised
+    l0: np 1D array, same size as alt, outer scale in metre for every layer
+    alt: np 1D array, altitude of every layer in metre
+    nwfs: int, number of WFS
+    gspos: np 2D array, [nwfs, 2], X/Y position in arcsec for every WFS
+    gsalt: np 1D array, length = nwfs, altitude for all WFS in metre, 0 for NGS
+
+    timedelay: float, time difference in second, default = 0, usually calculated by (# frame_delay * it_time)
+    windspeed: np 1D array, same size as alt, speed of every layer in m/s
+    winddir: np 1D array, same size as alt, wind direction of everylayer with respect to x-axis in degree
+    --> if timedelay == 0, wind will not be considered at all
+    return:
+
+    CMM_ana: np 2D array, analytical CMM for all valid WFS pairs
+
+
+    '''
+    dtor   = np.pi/180
+    astor  = dtor/60/60
+    zenith = zenith*dtor
+    gspos  = gspos*astor
+    #print(gspos)
+    subAperSize = telDiam/shnxsub
+    r0     = r0*math.cos(zenith)**0.6
+    gsalt  = gsalt/math.cos(zenith)
+    alt    = alt/math.cos(zenith)
+    Cn2    = Cn2/np.sum(Cn2)
+    l0     = np.where(l0>1000,1000,l0)
+    windflag = 0 if timedelay==0 else 1
+    if windflag :
+        print("Temporal evolution enabled!")
+        windspeed   = np.array(windspeed)
+        winddir     = np.array(winddir)*dtor
+        windspeed_x = windspeed*np.cos(winddir)
+        windspeed_y = windspeed*np.sin(winddir)
+
+    CMM_ana = np.zeros((nwfs*2*xx.shape[0],nwfs*2*xx.shape[0]))
+    #x0 = y0    = np.arange(-shnxsub+1,shnxsub,1)
+    #X0,Y0      = np.meshgrid(xx,yy)
+    #X0         = X0*subAperSize
+    #Y0         = Y0*subAperSize
+    X0 = xx
+    Y0 = yy
+    n_deltaY   = Y0.shape[0]
+    k         = 1/subAperSize/subAperSize
+    lambda2   = (0.5e-6/2/np.pi/astor)**2
+
+    time_start = time.time()
+    print("Begin calculating CMM from Cn2")
+    for wfs_1 in range(nwfs):
+        for wfs_2 in range(wfs_1,nwfs):
+            #print("begin calculating for WFS # "+str(wfs_1)+" and WFS #"+str(wfs_2)+" !")
+            gsalt_1 = gsalt[wfs_1]
+            gsalt_2 = gsalt[wfs_2]
+
+            for li in range(alt.shape[0]):
+
+                layer_alt = alt[li]
+                l0_i      = l0[li]
+                Cn2h      = r0**(-5/3)*Cn2[li]
+                dx_li_wind= 0
+                dy_li_wind= 0
+
+                if windflag :
+                    dx_li_wind = windspeed_x[li] * timedelay
+                    dy_li_wind = windspeed_y[li] * timedelay
+                #print("Processing altitude = "+str(layer_alt)+" m")
+
+                if gsalt_1*gsalt_2 == 0:
+                    if gsalt_1 == gsalt_2:
+                        # 2 NGS
+                        X1i = X0 - layer_alt*(gspos[wfs_2,0]-gspos[wfs_1,0]) - dx_li_wind
+                        Y1i = Y0 - layer_alt*(gspos[wfs_2,1]-gspos[wfs_1,1]) - dy_li_wind
+                        # no need to scale subAperSize
+                        subAperSize_i = subAperSize
+                    else:
+                        # 1 NGS 1 LGS
+                        raise Exception('Cov Map between LGS and NGS is not valid!')
+                else:
+                    # 2 LGS
+                    # Average gsalt is used here, which is not precise
+                    if gsalt_1<layer_alt or gsalt_2<layer_alt:
+                        raise Exception('Turbulence layer is higher than LGS altitude!')
+                    else:
+                        #avg_gsalt = (gsalt_1+gsalt_2)/2
+
+                        X1i = (1-layer_alt/gsalt_1)*X0 - layer_alt*gspos[wfs_1,0] - dx_li_wind
+                        Y1i = (1-layer_alt/gsalt_1)*Y0 - layer_alt*gspos[wfs_1,1] - dy_li_wind
+                        X2i = (1-layer_alt/gsalt_2)*X0 - layer_alt*gspos[wfs_2,0] - dx_li_wind
+                        Y2i = (1-layer_alt/gsalt_2)*Y0 - layer_alt*gspos[wfs_2,1] - dy_li_wind
+                        #subAperSize_i = (1-layer_alt/avg_gsalt)*subAperSize
+                        s1 = (1-layer_alt/gsalt_1)*subAperSize
+                        s2 = (1-layer_alt/gsalt_2)*subAperSize
+
+                XX1, XX2 = np.meshgrid (X1i,X2i)
+                YY1, YY2 = np.meshgrid (Y1i,Y2i)
+                Xi  = XX1 - XX2
+                Yi  = YY1 - YY2
+                #Xi = X2i - X1i.T
+                #Yi = Y2i - Y1i.T
+                ac = s1/2-s2/2
+                ad = s1/2+s2/2
+                bc = -s1/2-s2/2
+                bd = -s1/2+s2/2
+                #print("%.3f,%.3f,%.3f,%.3f"%(ac,ad,bc,bd))
+
+                Cov_XX = (-DPHI(Xi+ac,Yi,l0_i) + DPHI(Xi+ad,Yi,l0_i) + DPHI(Xi+bc,Yi,l0_i)-DPHI(Xi+bd,Yi,l0_i))*0.5
+                Cov_XX = Cov_XX *k*lambda2*np.abs(Cn2h)
+                Cov_YY = (-DPHI(Xi,Yi+ac,l0_i) + DPHI(Xi,Yi+ad,l0_i) + DPHI(Xi,Yi+bc,l0_i)-DPHI(Xi,Yi+bd,l0_i))*0.5
+                Cov_YY = Cov_YY *k*lambda2*np.abs(Cn2h)
+                s0 = np.sqrt(s1**2+s2**2)/2
+                #subAperSize_i = s1
+
+                Cov_XY = -DPHI(Xi+s0,Yi-s0,l0_i) +\
+                          DPHI(Xi+s0,Yi+s0,l0_i) +\
+                          DPHI(Xi-s0,Yi-s0,l0_i) -\
+                          DPHI(Xi-s0,Yi+s0,l0_i)
+
+                Cov_XY = Cov_XY/4
+                Cov_XY = Cov_XY *k*lambda2*np.abs(Cn2h)
+
+                CMM_ana[n_deltaY*2*wfs_1:n_deltaY*2*wfs_1+n_deltaY,n_deltaY*2*wfs_2:n_deltaY*2*wfs_2+n_deltaY] += Cov_XX
+                CMM_ana[n_deltaY*2*wfs_1+n_deltaY:n_deltaY*2*(wfs_1+1),n_deltaY*2*wfs_2+n_deltaY:n_deltaY*2*(wfs_2+1)] += Cov_YY
+                CMM_ana[n_deltaY*2*wfs_1:n_deltaY*2*wfs_1+n_deltaY,n_deltaY*2*wfs_2+n_deltaY:n_deltaY*2*(wfs_2+1)] += Cov_XY
+                CMM_ana[n_deltaY*2*wfs_1+n_deltaY:n_deltaY*2*(wfs_1+1),n_deltaY*2*wfs_2:n_deltaY*2*wfs_2+n_deltaY] += Cov_XY
+
+    time_end = time.time()
+    print("CMM generation finished! Time taken = %.1f seconds."%(time_end-time_start))
+    #hdu = fits.PrimaryHDU(CovMap_ana)
+    #hdu.writeto("CovMap_ana_full.fits",overwrite=1)
+    #CovMap_ana = CovMap_ana * CovMapMask
+    CMM_ana_full = np.tril(CMM_ana.T)+np.tril(CMM_ana.T).T - np.diag(CMM_ana.diagonal())
+    return CMM_ana_full.astype('float32')
+
+def CMM_from_npz (prefix = 'mavis'):
+    '''
+    load config npz file and prepares for CMM_from_Cn2 ()
+    telDiam,zenith,shnxsub,xx,yy,r0,Cn2,l0,alt,nwfs,gspos,gsalt,timedelay=0,windspeed=[],winddir=[]
+    '''
+    sysconfigfile = "sysconfig_"+prefix+".npz"
+    npfile = np.load(sysconfigfile)
+    print(npfile.files)
+    validsubs=npfile['validsubs']
+    telDiam = npfile['telDiam']
+    zenith = npfile['zenith']
+    shnxsub = npfile['shnxsub']
+    xx = npfile['xx']
+    yy = npfile['yy']
+    r0 = npfile['r0']
+    Cn2 = npfile['Cn2']
+    l0 = npfile['l0']
+    alt = npfile['alt']
+    nwfs = npfile['nwfs']
+    gspos = npfile['gspos']
+    gsalt = npfile['gsalt']
+
+    return CMM_from_Cn2 (telDiam,zenith,shnxsub,xx,yy,r0,Cn2,l0,alt,nwfs,gspos,gsalt)
+
+
+
 #####=====
 ##### Part 5: All in one function for Compass users
 #####         after initialisation, run Map_and_Mat()
@@ -649,6 +827,47 @@ def Map_and_Mat (sup):
     Cmm_ana = Mat_from_CovMap(CovMap_ana,nwfs,validsubs,shnxsub)
 
     return CovMap_ana.astype('float64'),Cmm_ana.astype('float64')
+
+
+##### saving sys config npz file
+def save_npz (sup,prefix = "mavis"):
+    '''
+    saving required parametres from supervisor
+    '''
+    if type(sup) != shesha.supervisor.compassSupervisor.CompassSupervisor:
+        raise Exception('No AO system found!')
+    sim  = sup._sim
+    tel  = sim.config.p_tel
+    geom = sim.config.p_geom
+    lgs0 = sim.config.p_wfs_lgs[0]#assume all lgs have same configuration
+    atmos= sim.config.p_atmos
+    shnxsub = lgs0.get_nxsub()
+    x_co = np.round(lgs0.get_validsubsx()/lgs0.get_npix()).astype("int")
+    y_co = np.round(lgs0.get_validsubsy()/lgs0.get_npix()).astype("int")
+    # x_co, y_co all in subapertures, shall be centred and scaled
+    xx   = (x_co - (np.max(x_co) - np.min(x_co))/2)*lgs0.get_subapd()
+    yy   = (y_co - (np.max(y_co) - np.min(y_co))/2)*lgs0.get_subapd()
+    validsubs = get_full_index_compass(shnxsub,x_co,y_co)
+    nwfs = len(sim.config.p_wfs_lgs)
+    CovMapMask = np.tile(MapMask_from_validsubs(validsubs,shnxsub),[2*nwfs,2*nwfs])
+    telDiam = tel.get_diam()
+    zenith  = geom.get_zenithangle()
+    r0      = atmos.get_r0()
+    Cn2     = atmos.get_frac()
+    l0      = atmos.get_L0()
+    alt     = atmos.get_alt()*math.cos(zenith*np.pi/180)
+    gspos   = np.zeros([nwfs,2])
+    gsalt   = np.zeros([nwfs,1])
+    for ii in range(nwfs):
+        gspos[ii,0] = sim.config.p_wfs_lgs[ii].get_xpos()
+        gspos[ii,1] = sim.config.p_wfs_lgs[ii].get_ypos()
+        gsalt[ii] = sim.config.p_wfs_lgs[ii].get_gsalt()
+
+    np.savez("sysconfig_"+prefix+".npz",validsubs=validsubs,xx=xx,yy=yy,telDiam=telDiam,\
+              zenith=zenith,shnxsub=shnxsub,r0=r0,Cn2=Cn2,l0=l0,\
+              alt=alt,gspos=gspos,gsalt=gsalt,nwfs=nwfs,CovMapMask = CovMapMask)
+    npfile = np.load("sysconfig_"+prefix+".npz")
+    print(npfile.files)
 #####======
 ##### Part 6: Merging test for numerical covariance
 #####         Projection mat: taking par file and return square matrix
