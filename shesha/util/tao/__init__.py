@@ -123,14 +123,14 @@ def run(sup,mod,nIter=1,initialisation=0,reset=1,nfilt=300,WFS="all",DM_TT=False
         ##### 20200702 night time: running 20*50k buffer to be used later
         
         imat = np.array(sup._sim.rtc.d_control[0].d_imat)
-        np.save("buffer/imat_2layer.npy",imat)
+        np.save("buffer/imat_PLAY.npy",imat)
         for ii in range(20):
             dd=[]
             ss=[]
             save_id = str(nIter)+"_"+str(ii+1)
             dd,ss = sup._sim.loopPOLC(nIter)
-            np.save("buffer/dd_2layer_"+save_id+".npy",dd)
-            np.save("buffer/ss_2layer_"+save_id+".npy",ss)
+            np.save("buffer/dd_PLAY_"+save_id+".npy",dd)
+            np.save("buffer/ss_PLAY_"+save_id+".npy",ss)
     '''
     rand_id = str(int(np.random.random(1)*100000))
     imat = np.array(sup._sim.rtc.d_control[0].d_imat)

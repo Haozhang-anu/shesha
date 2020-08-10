@@ -1,0 +1,185 @@
+
+
+//------------------------------
+//general parameters
+//------------------------------
+sim.name        = "Predictive Learn and Apply toy-case";
+sim.pupildiam   = 640;
+sim.debug       = 0;
+sim.verbose     = 1;
+mat.file            = "";
+mat.condition = &([12.24744871]);
+mat.method = "none";
+YAO_SAVEPATH = ""; // where to save the output to the simulations
+tel.diam = 8.0;
+tel.cobs = 0.0;
+
+//------------------------------
+//DM  parameters
+//------------------------------
+
+//DM 1
+grow,dm,dms;
+dm(1).type          = "stackarray";
+dm(1).subsystem     = 1;
+dm(1).iffile        = ""; // not set by compass
+dm(1).alt           = 0.0;
+dm(1).unitpervolt   = 1.0;
+dm(1).push4imat     = 1.0;
+dm(1).nxact         = 41;
+dm(1).pitch         = 16.0;
+dm(1).thresholdresp = 0.1;
+dm(1).pitchMargin   = 2.2; // not set by compass
+dm(1).elt           = 1; // not set by compass
+dm(1).coupling    = 0.3;
+
+//DM 2
+grow,dm,dms;
+dm(2).type          = "stackarray";
+dm(2).subsystem     = 1;
+dm(2).iffile        = ""; // not set by compass
+dm(2).alt           = 6000.0;
+dm(2).unitpervolt   = 1.0;
+dm(2).push4imat     = 1.0;
+dm(2).nxact         = 41;
+dm(2).pitch         = 18.025;
+dm(2).thresholdresp = 0.1;
+dm(2).pitchMargin   = 2.2; // not set by compass
+dm(2).elt           = 1; // not set by compass
+dm(2).coupling    = 0.3;
+
+//DM 3
+grow,dm,dms;
+dm(3).type          = "stackarray";
+dm(3).subsystem     = 1;
+dm(3).iffile        = ""; // not set by compass
+dm(3).alt           = 13500.0;
+dm(3).unitpervolt   = 1.0;
+dm(3).push4imat     = 1.0;
+dm(3).nxact         = 41;
+dm(3).pitch         = 20.575;
+dm(3).thresholdresp = 0.1;
+dm(3).pitchMargin   = 2.2; // not set by compass
+dm(3).elt           = 1; // not set by compass
+dm(3).coupling    = 0.3;
+
+ndm = 3;
+
+//------------------------------
+//WFS parameters
+//------------------------------
+
+//WFS1
+grow,wfs,wfss;
+wfs(1).type           = "hartmann";
+wfs(1).subsystem     = 1;
+wfs(1).shmethod      = 2;
+wfs(1).shnxsub       = 40;
+wfs(1).lambda        = 0.589;
+wfs(1).pixsize       = 0.45558739079827404;
+wfs(1).npixels       = 12;
+wfs(1).shthreshold   = 0;   // not set by compass
+wfs(1).dispzoom      = 1.0; // not set by compass
+wfs(1).fracIllum     = 0.8;
+wfs(1).gspos         = [ 17.5 , 0.0 ];
+wfs(1).noise         = 1;
+wfs(1).ron           = 0.5;
+wfs(1).darkcurrent   = 0 ; // not set by compass 
+wfs(1).gsalt         = 90000.0;
+wfs(1).gsdepth       = 1;
+wfs(1).optthroughput = 0.5;
+wfs(1).laserpower    = 20.0;
+wfs(1).filtertilt    = 1;
+wfs(1).correctUpTT   = 1;
+wfs(1).uplinkgain    = 0.2;
+
+//WFS2
+grow,wfs,wfss;
+wfs(2).type           = "hartmann";
+wfs(2).subsystem     = 1;
+wfs(2).shmethod      = 2;
+wfs(2).shnxsub       = 40;
+wfs(2).lambda        = 0.589;
+wfs(2).pixsize       = 0.45558739079827404;
+wfs(2).npixels       = 12;
+wfs(2).shthreshold   = 0;   // not set by compass
+wfs(2).dispzoom      = 1.0; // not set by compass
+wfs(2).fracIllum     = 0.8;
+wfs(2).gspos         = [ -8.749999999999996 , 15.155444566227677 ];
+wfs(2).noise         = 1;
+wfs(2).ron           = 0.5;
+wfs(2).darkcurrent   = 0 ; // not set by compass 
+wfs(2).gsalt         = 90000.0;
+wfs(2).gsdepth       = 1;
+wfs(2).optthroughput = 0.5;
+wfs(2).laserpower    = 20.0;
+wfs(2).filtertilt    = 1;
+wfs(2).correctUpTT   = 1;
+wfs(2).uplinkgain    = 0.2;
+
+//WFS3
+grow,wfs,wfss;
+wfs(3).type           = "hartmann";
+wfs(3).subsystem     = 1;
+wfs(3).shmethod      = 2;
+wfs(3).shnxsub       = 40;
+wfs(3).lambda        = 0.589;
+wfs(3).pixsize       = 0.45558739079827404;
+wfs(3).npixels       = 12;
+wfs(3).shthreshold   = 0;   // not set by compass
+wfs(3).dispzoom      = 1.0; // not set by compass
+wfs(3).fracIllum     = 0.8;
+wfs(3).gspos         = [ -8.750000000000007 , -15.155444566227672 ];
+wfs(3).noise         = 1;
+wfs(3).ron           = 0.5;
+wfs(3).darkcurrent   = 0 ; // not set by compass 
+wfs(3).gsalt         = 90000.0;
+wfs(3).gsdepth       = 1;
+wfs(3).optthroughput = 0.5;
+wfs(3).laserpower    = 20.0;
+wfs(3).filtertilt    = 1;
+wfs(3).correctUpTT   = 1;
+wfs(3).uplinkgain    = 0.2;
+
+nngs = 0;
+nlgs = 3;
+nwfs = 3;
+
+//------------------------------
+//TAR  parameters
+//------------------------------
+target.lambda       = &([0.55]);
+target.xposition    = &([0.]);
+target.yposition    = &([0.]);
+target.dispzoom     = &([1.]) ; // not set by compass
+
+//------------------------------
+//GS parameters
+//------------------------------
+gs.zeropoint         = 100000000000.0; //TODO get 
+gs.lgsreturnperwatt  = 22.0; //TODO check lgs case
+gs.zenithangle       = 0.0;
+
+//------------------------------
+//ATM  parameters
+//------------------------------
+r0              =0.1182; //qt 500 nm
+atm.dr0at05mic  = tel.diam/r0;
+atm.screen = &("./yao_screen"+["1","2","3","4"]+".fits")
+atm.layerspeed  = &([10.,15.,20.,15.]);
+atm.layeralt    = &([   30., 4500., 9200.,14000.]);
+atm.layerfrac   = &([0.5,0.2,0.2,0.1]);
+atm.winddir     = &([  0., 30.,111.,260.]);
+
+//------------------------------
+//LOOP  parameters
+//------------------------------
+loop.method     = "none";
+loop.leak       = 0.001;
+loop.gain       = 0.4;
+loop.framedelay = 0.0;
+loop.niter      = 10000;
+loop.ittime     = 0.001;
+loop.skipevery  = 100000;
+loop.startskip  = 30;
+loop.skipby     = 5000;

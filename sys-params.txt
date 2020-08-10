@@ -1,39 +1,39 @@
 diam       : meter     : Telescope diameter
 8.0
 obs        : percent   : Central obscuration
-0.16
+0.0
 tFrame     : second    : frame rate
 0.001
 nW         :           : number of WFS
-9
+7
 nLgs       :           : number of LGS
-8
+6
 nTS        :           : number of Truth Sensor
 25
 nTarget    :           : number of Target
 1
 Nssp       :           : number of subaperture per wfs along the diameter
-40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 
 fracsub    : %         : Minimal illumination fraction for valid subap
 -1
 gsAlt      : meter^-1  : inverse of lazer altitude
-1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 0 
+1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 1.1111111111111112e-05 0 
 type       :           : guide star type (1:NGS, 2:LGS)
-2 2 2 2 2 2 2 2 1 
+2 2 2 2 2 2 1 
 alphaX_as  : arcsec    : pointing direction of the wfs on x axis
-17.5 12.374368670764582 1.0715659492539341e-15 -12.37436867076458 -17.5 -12.374368670764584 -3.214697847761802e-15 12.374368670764579 0.0 
+17.5 8.750000000000002 -8.749999999999996 -17.5 -8.750000000000007 8.749999999999988 0.0 
 alphaY_as  : arcsec    : pointing direction of the wfs on y axis
-0.0 12.37436867076458 17.5 12.374368670764582 2.1431318985078682e-15 -12.37436867076458 -17.5 -12.374368670764584 0.0 
+0.0 15.155444566227676 15.155444566227677 2.1431318985078682e-15 -15.155444566227672 -15.155444566227683 0.0 
 XPup       : meter     : pupil shift of the WFS
-0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 
 YPup       : meter     : pupil shift of the WFS
-0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 
 thetaML    :           : rotation of the microlenses
-0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 
 thetaCam   :           : rotation of the camera
-0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 
 sensibility:           : sensitivity coeff of this WFS
-1 1 1 1 1 1 1 1 1 
+1 1 1 1 1 1 1 
 tracking   : arcsec^2  : telescope tracking error parameters (x^2, y^2 and xy)
 1 1 1
 pasDPHI    :           : Precision of DPHI precomputation. //deprecated

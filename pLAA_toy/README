@@ -1,0 +1,26 @@
+in this directory we have all the files required to
+simulate and compare the predictive learn tools for
+an MCAO system.
+
+For COMPASS
+	pLAA_toy.py 		- COMPASS parameter file
+
+For Hao's SHESHA branch
+	CovMap_from_Mat.py	- Hao/Yuxi's CovMap CPU generation tools, MODIFIED
+	covmap_wind.py 		- wrapper to generate CovMap + Cmm for given dT
+	sysconfig_pLAA_toy.npz	- parameters for CovMap generation
+
+For SHIPS
+	atmParams.json		- JSON parameter file for atmosphere
+	sysParams.json		- JSON parameter file for AO system
+	sys-input.fits		- FITS file containing required input data
+
+For YAO (NOT CROSS COMPATIBLE YET)
+	yao.par			- YAO parameter file generated from pLAA_toy.py
+	yao.fits		- FITS file containing required input data
+
+
+For an illustrative example of the time-delayed CovMaps/Cmms, you should
+(in-principle) be able to run:
+    ipython -i covmap_wind.py
+from this directory without any special packages installed.

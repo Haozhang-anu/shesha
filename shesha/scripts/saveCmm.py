@@ -122,7 +122,7 @@ if __name__ == "__main__":
         nniter = 10000
     else:
         nniter = 50000   
-    dd,ss = tao.run(sup,tao.mcao,nIter=nniter,initialisation=1,nfilt=150,WFS="lgs",DM_TT=False,lgstt=0.0) 
+    dd,ss = tao.run(sup,tao.mcao,nIter=nniter,initialisation=1,nfilt=100,WFS="lgs",DM_TT=False,lgstt=0.0) 
 
     #### have to use
 

@@ -1,0 +1,169 @@
+{
+    "instrument": {
+        "diam": {
+            "comment": " meter      : telescope diameter",
+            "value": 8.0
+        },
+        "cobs": {
+            "comment": " percent    : central obscuration",
+            "value": 0.0
+        },
+        "tFrame": {
+            "comment": " second     : frame rate",
+            "value": 0.001
+        },
+        "fracsub": {
+            "comment": "Minimal illumination fraction for valid subap",
+            "value": 0.8
+        },
+        "throughAtm": {
+            "comment": "percent    : atmosphere transmission",
+            "value": 1.0
+        },
+        "tracking": {
+            "comment": "arcsec^2  : telescope tracking error parameters (x^2, y^2 and xy)",
+            "value": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "wfs": {
+            "notice_lgs": {
+                "nssp": "            : number of subapertures along the diameter",
+                "alphaX_as": " arcsec     : pointing direction of the wfs (on x axis)",
+                "alphaY_as": " arcsec     : pointing direction of the wfs (on y axis)",
+                "XPup": " meter      : pupil shift of the WFS (on axis x)",
+                "YPup": " meter      : pupil shift of the WFS (on axis y)",
+                "thetaML": " radian     : rotation of the camera",
+                "thetaCam": " radian     : rotation of the microlenses",
+                "sensitivity": "            : sensitivity coeff of this WFS",
+                "pixSize": " arcsec     : WFS pixel size",
+                "lambdaWFS": " meter      : WFS wavelength",
+                "bandwidth": " meter      : WFS bandwidth",
+                "throughput": " percent    : transmission for the GS",
+                "RON": " nb of e-   : Read Out Noise",
+                "lgsAlt": " meter      : laser guide star altitude",
+                "lgsDepth": " meter      : laser guide star depth",
+                "lgsFlux": " (ph/m2/s)  : LGS photon return at M1",
+                "spotWidth": " arcsec     : lazer width",
+                "lgsCst": "            : constant on lgs (simulate that LGS cannot measure tip-tilt and focus, for Linear Algebra purpose)"
+            },
+            "notice_ngs": {
+                "nssp": "            : number of subapertures along the diameter",
+                "alphaX_as": " arcsec     : pointing direction of the wfs (on x axis)",
+                "alphaY_as": " arcsec     : pointing direction of the wfs (on y axis)",
+                "XPup": " meter      : pupil shift of the WFS (on axis x)",
+                "YPup": " meter      : pupil shift of the WFS (on axis y)",
+                "thetaML": " radian     : rotation of the camera",
+                "thetaCam": " radian     : rotation of the microlenses",
+                "sensitivity": "            : sensitivity coeff of this WFS",
+                "pixSize": " arcsec     : WFS pixel size",
+                "lambdaWFS": " meter      : WFS wavelength",
+                "bandwidth": " meter      : WFS bandwidth",
+                "throughput": " percent    : transmission for the GS",
+                "RON": " nb of e-   : Read Out Noise",
+                "magnitude": "            : guide stars magnitude"
+            },
+            "lgs": [
+                {
+                    "nssp": 40,
+                    "alphaX_as": 17.5,
+                    "alphaY_as": 0.0,
+                    "XPup": 0.0,
+                    "YPup": 0.0,
+                    "thetaML": 0.0,
+                    "thetaCam": 0,
+                    "sensitivity": 0,
+                    "pixSize": 0.45558739079827404,
+                    "lambdaWFS": 0.589,
+                    "bandwidth": 3.3e-07,
+                    "throughput": 0.5,
+                    "RON": 0.5,
+                    "lgsAlt": 90000.0,
+                    "lgsDepth": 5000.0,
+                    "lgsFlux": 2200000.0,
+                    "spotWidth": 0.8,
+                    "lgsCst": 0.1
+                },
+                {
+                    "nssp": 40,
+                    "alphaX_as": -8.749999999999996,
+                    "alphaY_as": 15.155444566227677,
+                    "XPup": 0.0,
+                    "YPup": 0.0,
+                    "thetaML": 0.0,
+                    "thetaCam": 0,
+                    "sensitivity": 0,
+                    "pixSize": 0.45558739079827404,
+                    "lambdaWFS": 0.589,
+                    "bandwidth": 3.3e-07,
+                    "throughput": 0.5,
+                    "RON": 0.5,
+                    "lgsAlt": 90000.0,
+                    "lgsDepth": 5000.0,
+                    "lgsFlux": 2200000.0,
+                    "spotWidth": 0.8,
+                    "lgsCst": 0.1
+                },
+                {
+                    "nssp": 40,
+                    "alphaX_as": -8.750000000000007,
+                    "alphaY_as": -15.155444566227672,
+                    "XPup": 0.0,
+                    "YPup": 0.0,
+                    "thetaML": 0.0,
+                    "thetaCam": 0,
+                    "sensitivity": 0,
+                    "pixSize": 0.45558739079827404,
+                    "lambdaWFS": 0.589,
+                    "bandwidth": 3.3e-07,
+                    "throughput": 0.5,
+                    "RON": 0.5,
+                    "lgsAlt": 90000.0,
+                    "lgsDepth": 5000.0,
+                    "lgsFlux": 2200000.0,
+                    "spotWidth": 0.8,
+                    "lgsCst": 0.1
+                }
+            ],
+            "ngs": [],
+            "ts": null,
+            "target": {
+                "nssp": 40,
+                "alphaX_as": [
+                    0.0
+                ],
+                "alphaY_as": [
+                    0.0
+                ]
+            }
+        },
+        "dm": [
+            {
+                "n_actu": 41,
+                "h": 0.0,
+                "coupling": 0.3,
+                "shift_x": 0.0,
+                "shift_y": 0.0,
+                "theta": 0.0
+            },
+            {
+                "n_actu": 41,
+                "h": 6000.0,
+                "coupling": 0.3,
+                "shift_x": 0.0,
+                "shift_y": 0.0,
+                "theta": 0.0
+            },
+            {
+                "n_actu": 41,
+                "h": 13500.0,
+                "coupling": 0.3,
+                "shift_x": 0.0,
+                "shift_y": 0.0,
+                "theta": 0.0
+            }
+        ]
+    }
+}

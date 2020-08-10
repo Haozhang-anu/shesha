@@ -20,8 +20,8 @@ warmup : 0
 Initialize system
     Reading system parameters: .//sys-params.txt
     reading valid subapertures from file.//sys-inputs.fits...
-reading 10332
-reading 10332
+reading 8344
+reading 8344
     done
     generate LGS elongation...     done
 done
@@ -29,8 +29,8 @@ Updating atmospheric parameters...
     Reading atmospheric parameters: .//prof-1-atmos-night0.txt
     computing position of projected subapertures...    done
 done
-using 18368 meas and 2296 ts meas
-Using 4744 actuators
+using 14304 meas and 2384 ts meas
+Using 3759 actuators
 Tile size:1000
 Working on 1 cores and 1 gpus
 gpuid is1 1 1
@@ -48,31 +48,31 @@ nts is 25
 CHAMELEON: MOAO started
 
 CHAMELEON: MOAO Loading the interaction matrix Dx
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
-reading 10892224
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
+reading 8961456
 
 nbrefine1
 Updating atmospheric parameters...
@@ -105,26 +105,26 @@ done
     computing position of projected subapertures...    done
     computing position of projected subapertures...    done
 WRITING M_mcao.fits
-WRITING 87137792 ELEMS
+WRITING 53768736 ELEMS
 ========================================
 simu characteristics
 ncores   : 1
 ngpus    : 1
 tile size: 1000
-nmeas    : 18368
-nmeasts  : 2296
-nact     : 4744
-nLayers  : 2
+nmeas    : 14304
+nmeasts  : 2384
+nact     : 3759
+nLayers  : 4
 nTargets : 1
 nrefine  : 1
 nObs     : 1
 nTarget  : 1
 ========================================
 Performances:  time (s)   GFlop/s
-allocation     0.823112
-preprocess     0.00634623
-matcov         13.1778  22.2102
-reconstructor  8.31152  434.963
-refine         21.4998
-computation    8.31152  470.177
-total          56.0187  69.7604
+allocation     0.545727
+preprocess     0.00889897
+matcov         18.2372  23.4106
+reconstructor  6.20952  314.24
+refine         24.4538
+computation    6.20952  382.996
+total          50.2715  47.3075

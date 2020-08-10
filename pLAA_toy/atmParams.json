@@ -1,0 +1,48 @@
+{
+    "notice": {
+        "name": "          : profile name",
+        "nLayer": "          : number of layers in the turbulent profile",
+        "r0": "r0 at 500 nm (fried parameter)",
+        "h": " meter    : (list) altitude of each layer",
+        "fracCn2": " percent  : (list) cn2 fraction of each layer",
+        "L0": "meter    : (list) outer scale of each layer",
+        "windDir": " degree   : (list) wind sirection of each layer",
+        "windSpeed": " meter/s  : (list) wind speed of each layer"
+    },
+    "profiles": [
+        {
+            "nLayer": 4,
+            "r0": 0.1182,
+            "h": [
+                30.0,
+                4500.0,
+                9200.0,
+                14000.0
+            ],
+            "fracCn2": [
+                0.5,
+                0.20000000298023224,
+                0.20000000298023224,
+                0.10000000149011612
+            ],
+            "L0": [
+                25.0,
+                25.0,
+                25.0,
+                25.0
+            ],
+            "windDir": [
+                0.0,
+                30.0,
+                111.0,
+                260.0
+            ],
+            "windSpeed": [
+                10.0,
+                15.0,
+                20.0,
+                15.0
+            ]
+        }
+    ]
+}

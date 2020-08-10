@@ -6,3 +6,4 @@ widgets/*fab*
 *.fits
 *.npy
 *.npz
+*.png

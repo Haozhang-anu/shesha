@@ -691,32 +691,24 @@ def CMM_from_Cn2 (telDiam,zenith,shnxsub,xx,yy,r0,Cn2,l0,alt,nwfs,gspos,gsalt,ti
                     dy_li_wind = windspeed_y[li] * timedelay
                 #print("Processing altitude = "+str(layer_alt)+" m")
 
-                if gsalt_1*gsalt_2 == 0:
-                    if gsalt_1 == gsalt_2:
-                        # 2 NGS
-                        X1i = X0 - layer_alt*(gspos[wfs_2,0]-gspos[wfs_1,0]) - dx_li_wind
-                        Y1i = Y0 - layer_alt*(gspos[wfs_2,1]-gspos[wfs_1,1]) - dy_li_wind
-                        # no need to scale subAperSize
-                        subAperSize_i = subAperSize
-                    else:
-                        # 1 NGS 1 LGS
-                        raise Exception('Cov Map between LGS and NGS is not valid!')
+                if gsalt_1 == 0:
+                    X1i = X0 - layer_alt*gspos[wfs_1,0] - dx_li_wind
+                    Y1i = Y0 - layer_alt*gspos[wfs_1,1] - dy_li_wind
+                    s1 = subAperSize
                 else:
-                    # 2 LGS
-                    # Average gsalt is used here, which is not precise
-                    if gsalt_1<layer_alt or gsalt_2<layer_alt:
-                        raise Exception('Turbulence layer is higher than LGS altitude!')
-                    else:
-                        #avg_gsalt = (gsalt_1+gsalt_2)/2
+                    X1i = (1-layer_alt/gsalt_1)*X0 - layer_alt*gspos[wfs_1,0] - dx_li_wind
+                    Y1i = (1-layer_alt/gsalt_1)*Y0 - layer_alt*gspos[wfs_1,1] - dy_li_wind
+                    s1 = (1-layer_alt/gsalt_1)*subAperSize
 
-                        X1i = (1-layer_alt/gsalt_1)*X0 - layer_alt*gspos[wfs_1,0] - dx_li_wind
-                        Y1i = (1-layer_alt/gsalt_1)*Y0 - layer_alt*gspos[wfs_1,1] - dy_li_wind
-                        X2i = (1-layer_alt/gsalt_2)*X0 - layer_alt*gspos[wfs_2,0] - dx_li_wind
-                        Y2i = (1-layer_alt/gsalt_2)*Y0 - layer_alt*gspos[wfs_2,1] - dy_li_wind
-                        #subAperSize_i = (1-layer_alt/avg_gsalt)*subAperSize
-                        s1 = (1-layer_alt/gsalt_1)*subAperSize
-                        s2 = (1-layer_alt/gsalt_2)*subAperSize
 
+                if gsalt_2 == 0:
+                    X2i = X0 - layer_alt*gspos[wfs_2,0] - dx_li_wind
+                    Y2i = Y0 - layer_alt*gspos[wfs_2,1] - dy_li_wind
+                    s2 = subAperSize
+                else:
+                    X2i = (1-layer_alt/gsalt_2)*X0 - layer_alt*gspos[wfs_2,0] - dx_li_wind
+                    Y2i = (1-layer_alt/gsalt_2)*Y0 - layer_alt*gspos[wfs_2,1] - dy_li_wind
+                    s2 = (1-layer_alt/gsalt_2)*subAperSize
                 XX1, XX2 = np.meshgrid (X1i,X2i)
                 YY1, YY2 = np.meshgrid (Y1i,Y2i)
                 Xi  = XX1 - XX2
@@ -845,10 +837,12 @@ def save_npz (sup,prefix = "mavis"):
     x_co = np.round(lgs0.get_validsubsx()/lgs0.get_npix()).astype("int")
     y_co = np.round(lgs0.get_validsubsy()/lgs0.get_npix()).astype("int")
     # x_co, y_co all in subapertures, shall be centred and scaled
-    xx   = (x_co - (np.max(x_co) - np.min(x_co))/2)*lgs0.get_subapd()
-    yy   = (y_co - (np.max(y_co) - np.min(y_co))/2)*lgs0.get_subapd()
+    xx   = (x_co - (np.max(x_co) + np.min(x_co))/2)*lgs0.get_subapd() #wfs x coords centred in metres
+    yy   = (y_co - (np.max(y_co) + np.min(y_co))/2)*lgs0.get_subapd()
     validsubs = get_full_index_compass(shnxsub,x_co,y_co)
     nwfs = len(sim.config.p_wfs_lgs)
+    nts  = len(sim.config.p_wfs_ts)
+    ndm  = len(sim.config.p_dms)
     CovMapMask = np.tile(MapMask_from_validsubs(validsubs,shnxsub),[2*nwfs,2*nwfs])
     telDiam = tel.get_diam()
     zenith  = geom.get_zenithangle()
@@ -856,16 +850,55 @@ def save_npz (sup,prefix = "mavis"):
     Cn2     = atmos.get_frac()
     l0      = atmos.get_L0()
     alt     = atmos.get_alt()*math.cos(zenith*np.pi/180)
+    windspeed = atmos.get_windspeed()
+    winddir = atmos.get_winddir()
+    ittime  = sim.config.p_loop.get_ittime()
     gspos   = np.zeros([nwfs,2])
     gsalt   = np.zeros([nwfs,1])
+    tspos   = np.zeros([nts,2])
+    tsalt   = np.zeros([nts,1])
+    nact    = np.zeros([ndm,1])
+    dmalt   = np.zeros([ndm,1])
+    dmpitch   = np.zeros([ndm,1])
+    imat    = sim.config.p_controller0.get_imat()
+    pixsize = sim.config.p_geom.get_pixsize()
+    coupling= np.zeros([ndm,1])
+
     for ii in range(nwfs):
         gspos[ii,0] = sim.config.p_wfs_lgs[ii].get_xpos()
         gspos[ii,1] = sim.config.p_wfs_lgs[ii].get_ypos()
         gsalt[ii] = sim.config.p_wfs_lgs[ii].get_gsalt()
 
+    for ii in range(nts):
+        tspos[ii,0] = sim.config.p_wfs_ts[ii].get_xpos()
+        tspos[ii,1] = sim.config.p_wfs_ts[ii].get_ypos()
+        tsalt[ii] = sim.config.p_wfs_ts[ii].get_gsalt()
+
+    for ii in range(ndm):
+        nact[ii] = sim.config.p_dms[ii].get_ntotact()
+        dmalt[ii]= sim.config.p_dms[ii].get_alt() #metres
+        dmpitch[ii] = sim.config.p_dms[ii].get_pitch()*pixsize # dmpitch in metres
+        coupling[ii] = sim.config.p_dms[ii].get_coupling()
+        dmx = (sim.config.p_dms[ii].get_xpos()-(np.max(sim.config.p_dms[ii].get_xpos())+np.min(sim.config.p_dms[ii].get_xpos()))/2)*pixsize
+        dmy = (sim.config.p_dms[ii].get_ypos()-(np.max(sim.config.p_dms[ii].get_ypos())+np.min(sim.config.p_dms[ii].get_ypos()))/2)*pixsize
+        if ii == 0:
+            dmxs = dmx # in metres, originally centred to 1023.5pix
+            dmys = dmy
+        else:
+            dmxs = np.append(dmxs,dmx) # in metres, different DM has different centre
+            dmys = np.append(dmys,dmy) # -4 to +4 for ground layer
+    
+    actidx = [(np.sum(nact[:ii])).astype('int') for ii in range(nact.shape[0]+1)]
+    imatblock = imat[:2*xx.shape[0],:int(nact[0])]
+
+
+
+
     np.savez("sysconfig_"+prefix+".npz",validsubs=validsubs,xx=xx,yy=yy,telDiam=telDiam,\
-              zenith=zenith,shnxsub=shnxsub,r0=r0,Cn2=Cn2,l0=l0,\
-              alt=alt,gspos=gspos,gsalt=gsalt,nwfs=nwfs,CovMapMask = CovMapMask)
+                zenith=zenith,shnxsub=shnxsub,r0=r0,Cn2=Cn2,l0=l0,\
+                alt=alt,gspos=gspos,gsalt=gsalt,nwfs=nwfs,CovMapMask = CovMapMask,\
+                tspos=tspos,tsalt=tsalt,actidx=actidx,imatblock=imatblock,dmalt=dmalt,dmpitch=dmpitch,coupling=coupling,\
+                dmxs=dmxs,dmys=dmys,pixsize=pixsize,windspeed=windspeed,winddir=winddir,ittime=ittime)
     npfile = np.load("sysconfig_"+prefix+".npz")
     print(npfile.files)
 #####======
